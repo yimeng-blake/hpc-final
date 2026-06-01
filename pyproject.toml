@@ -1,0 +1,16 @@
+[project]
+name = "hpc-final"
+version = "0.1.0"
+description = "SCALE-Sim experiment suite for image-processing stencils on systolic arrays"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy==1.26.4",
+  "pandas>=2.2",
+  "matplotlib>=3.8",
+  "PyYAML>=6.0",
+  "scalesim==3.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

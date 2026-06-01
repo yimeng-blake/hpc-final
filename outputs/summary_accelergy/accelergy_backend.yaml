@@ -1,0 +1,20 @@
+energy_backend: accelergy
+source: SCALE-Sim component action counts with Accelergy table-based ERT/action-count
+  energy calculation
+word_bytes: 1
+components:
+  mac: accelerator.mac_array
+  sram_ifmap: accelerator.ifmap_sram
+  sram_filter: accelerator.filter_sram
+  sram_ofmap: accelerator.ofmap_sram
+  dram_ifmap: accelerator.ifmap_dram
+  dram_filter: accelerator.filter_dram
+  dram_ofmap: accelerator.ofmap_dram
+component_actions:
+  mac: mac
+  sram_ifmap: read
+  sram_filter: read
+  sram_ofmap: write
+  dram_ifmap: read
+  dram_filter: read
+  dram_ofmap: write

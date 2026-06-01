@@ -1,0 +1,51 @@
+frequency_hz: 1000000000
+word_bytes: 1
+output_overhead_cycles: 0
+
+resolutions:
+  720p:
+    width: 1280
+    height: 720
+    deadlines_ms: [33, 100, 200]
+  1080p:
+    width: 1920
+    height: 1080
+    deadlines_ms: [33, 100, 200]
+  hires:
+    width: 2048
+    height: 2048
+    deadlines_ms: [33, 100, 200]
+
+gaussian_kernels: [3, 5, 7, 11]
+array_sizes: [8, 16, 32, 64, 128]
+sram_budgets_kb: [256, 1024, 4096]
+bandwidths_gbps: [50, 200, 800]
+dataflows: ["ws", "os"]
+
+tile_sizes:
+  sanity:
+    width: 64
+    height: 64
+  full:
+    width: 128
+    height: 128
+
+sanity_sweep:
+  resolutions: ["720p"]
+  gaussian_kernels: [3, 5]
+  array_sizes: [8, 16]
+  sram_budgets_kb: [1024]
+  bandwidths_gbps: [50, 200]
+  dataflows: ["ws"]
+
+energy:
+  mac_pj: 0.2
+  sram_pj_per_byte: 5.0
+  dram_pj_per_byte: 100.0
+
+scalesim:
+  read_request_buffer: 32
+  write_request_buffer: 32
+  ifmap_sram_fraction: 0.45
+  filter_sram_fraction: 0.10
+  ofmap_sram_fraction: 0.45
