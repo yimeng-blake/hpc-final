@@ -190,8 +190,7 @@ scripts/smoke_test_accelergy.py Validates Accelergy energy accounting.
 src/hpc_final/                Reusable Python package for modeling and analysis.
 outputs/summary_accelergy/    Final Accelergy-backed summary CSVs.
 figures_accelergy/            Final plots generated from Accelergy-backed summaries.
-docs/project_explanation.md   Detailed plain-language project explanation.
-docs/project_explanation.pdf  PDF export of the project explanation.
+misc/                         Archived non-core artifacts and legacy outputs.
 ```
 
 ## Setup
@@ -381,4 +380,3 @@ The final conclusions are:
 In short:
 
 > Size the accelerator to the workload and deadline. Do not simply choose the largest array.
-

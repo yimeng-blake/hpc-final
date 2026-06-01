@@ -1,5 +1,6 @@
 .venv/
 outputs/raw/
+misc/outputs/raw_cache/
 scratch_scalesim_smoke/
 .pytest_cache/
 __pycache__/
