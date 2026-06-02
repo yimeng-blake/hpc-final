@@ -7,7 +7,7 @@ from hpc_final.energy import energy_breakdown_from_access_counts_pj
     pytest.importorskip("accelergy", reason="Accelergy is optional") is None,
     reason="Accelergy is optional",
 )
-def test_accelergy_backend_matches_reference_energy_table():
+def test_accelergy_backend_uses_separate_read_write_energy_entries():
     result = energy_breakdown_from_access_counts_pj(
         macs=10,
         sram_ifmap_reads=8,
@@ -18,11 +18,13 @@ def test_accelergy_backend_matches_reference_energy_table():
         dram_ofmap_writes=6,
         word_bytes=1,
         mac_pj=0.2,
-        sram_pj_per_byte=5,
-        dram_pj_per_byte=100,
+        sram_read_pj_per_byte=5,
+        sram_write_pj_per_byte=4,
+        dram_read_pj_per_byte=100,
+        dram_write_pj_per_byte=120,
         backend="accelergy",
     )
     assert result["energy_mac_pj"] == pytest.approx(2)
-    assert result["energy_sram_pj"] == pytest.approx(100)
-    assert result["energy_dram_pj"] == pytest.approx(3000)
-    assert result["energy_total_pj"] == pytest.approx(3102)
+    assert result["energy_sram_pj"] == pytest.approx(95)
+    assert result["energy_dram_pj"] == pytest.approx(3120)
+    assert result["energy_total_pj"] == pytest.approx(3217)

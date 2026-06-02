@@ -3,6 +3,22 @@ from __future__ import annotations
 from .accelergy_backend import accelergy_energy_breakdown_pj
 
 
+def _read_write_values(
+    *,
+    combined_pj_per_byte: float | None,
+    read_pj_per_byte: float | None,
+    write_pj_per_byte: float | None,
+    component_name: str,
+) -> tuple[float, float]:
+    if read_pj_per_byte is None:
+        read_pj_per_byte = combined_pj_per_byte
+    if write_pj_per_byte is None:
+        write_pj_per_byte = combined_pj_per_byte
+    if read_pj_per_byte is None or write_pj_per_byte is None:
+        raise ValueError(f"{component_name} energy requires combined or separate read/write pJ-per-byte values")
+    return float(read_pj_per_byte), float(write_pj_per_byte)
+
+
 def energy_breakdown_pj(
     *,
     macs: float,
@@ -10,10 +26,26 @@ def energy_breakdown_pj(
     dram_accesses: float,
     word_bytes: int,
     mac_pj: float,
-    sram_pj_per_byte: float,
-    dram_pj_per_byte: float,
+    sram_pj_per_byte: float | None = None,
+    dram_pj_per_byte: float | None = None,
+    sram_read_pj_per_byte: float | None = None,
+    sram_write_pj_per_byte: float | None = None,
+    dram_read_pj_per_byte: float | None = None,
+    dram_write_pj_per_byte: float | None = None,
     backend: str = "analytical",
 ) -> dict[str, float]:
+    sram_read, sram_write = _read_write_values(
+        combined_pj_per_byte=sram_pj_per_byte,
+        read_pj_per_byte=sram_read_pj_per_byte,
+        write_pj_per_byte=sram_write_pj_per_byte,
+        component_name="SRAM",
+    )
+    dram_read, dram_write = _read_write_values(
+        combined_pj_per_byte=dram_pj_per_byte,
+        read_pj_per_byte=dram_read_pj_per_byte,
+        write_pj_per_byte=dram_write_pj_per_byte,
+        component_name="DRAM",
+    )
     if backend == "accelergy":
         return accelergy_energy_breakdown_pj(
             macs=macs,
@@ -25,15 +57,17 @@ def energy_breakdown_pj(
             dram_ofmap_writes=0,
             word_bytes=word_bytes,
             mac_pj=mac_pj,
-            sram_pj_per_byte=sram_pj_per_byte,
-            dram_pj_per_byte=dram_pj_per_byte,
+            sram_read_pj_per_byte=sram_read,
+            sram_write_pj_per_byte=sram_write,
+            dram_read_pj_per_byte=dram_read,
+            dram_write_pj_per_byte=dram_write,
         )
     if backend != "analytical":
         raise ValueError(f"Unknown energy backend: {backend}")
 
     energy_mac_pj = macs * mac_pj
-    energy_sram_pj = sram_accesses * word_bytes * sram_pj_per_byte
-    energy_dram_pj = dram_accesses * word_bytes * dram_pj_per_byte
+    energy_sram_pj = sram_accesses * word_bytes * sram_read
+    energy_dram_pj = dram_accesses * word_bytes * dram_read
     total = energy_mac_pj + energy_sram_pj + energy_dram_pj
     return {
         "energy_mac_pj": energy_mac_pj,
@@ -55,10 +89,26 @@ def energy_breakdown_from_access_counts_pj(
     dram_ofmap_writes: float,
     word_bytes: int,
     mac_pj: float,
-    sram_pj_per_byte: float,
-    dram_pj_per_byte: float,
+    sram_pj_per_byte: float | None = None,
+    dram_pj_per_byte: float | None = None,
+    sram_read_pj_per_byte: float | None = None,
+    sram_write_pj_per_byte: float | None = None,
+    dram_read_pj_per_byte: float | None = None,
+    dram_write_pj_per_byte: float | None = None,
     backend: str = "analytical",
 ) -> dict[str, float]:
+    sram_read, sram_write = _read_write_values(
+        combined_pj_per_byte=sram_pj_per_byte,
+        read_pj_per_byte=sram_read_pj_per_byte,
+        write_pj_per_byte=sram_write_pj_per_byte,
+        component_name="SRAM",
+    )
+    dram_read, dram_write = _read_write_values(
+        combined_pj_per_byte=dram_pj_per_byte,
+        read_pj_per_byte=dram_read_pj_per_byte,
+        write_pj_per_byte=dram_write_pj_per_byte,
+        component_name="DRAM",
+    )
     if backend == "accelergy":
         return accelergy_energy_breakdown_pj(
             macs=macs,
@@ -70,19 +120,21 @@ def energy_breakdown_from_access_counts_pj(
             dram_ofmap_writes=dram_ofmap_writes,
             word_bytes=word_bytes,
             mac_pj=mac_pj,
-            sram_pj_per_byte=sram_pj_per_byte,
-            dram_pj_per_byte=dram_pj_per_byte,
+            sram_read_pj_per_byte=sram_read,
+            sram_write_pj_per_byte=sram_write,
+            dram_read_pj_per_byte=dram_read,
+            dram_write_pj_per_byte=dram_write,
         )
     if backend != "analytical":
         raise ValueError(f"Unknown energy backend: {backend}")
 
     energy_mac_pj = macs * mac_pj
-    energy_sram_ifmap_pj = sram_ifmap_reads * word_bytes * sram_pj_per_byte
-    energy_sram_filter_pj = sram_filter_reads * word_bytes * sram_pj_per_byte
-    energy_sram_ofmap_pj = sram_ofmap_writes * word_bytes * sram_pj_per_byte
-    energy_dram_ifmap_pj = dram_ifmap_reads * word_bytes * dram_pj_per_byte
-    energy_dram_filter_pj = dram_filter_reads * word_bytes * dram_pj_per_byte
-    energy_dram_ofmap_pj = dram_ofmap_writes * word_bytes * dram_pj_per_byte
+    energy_sram_ifmap_pj = sram_ifmap_reads * word_bytes * sram_read
+    energy_sram_filter_pj = sram_filter_reads * word_bytes * sram_read
+    energy_sram_ofmap_pj = sram_ofmap_writes * word_bytes * sram_write
+    energy_dram_ifmap_pj = dram_ifmap_reads * word_bytes * dram_read
+    energy_dram_filter_pj = dram_filter_reads * word_bytes * dram_read
+    energy_dram_ofmap_pj = dram_ofmap_writes * word_bytes * dram_write
     energy_sram_pj = energy_sram_ifmap_pj + energy_sram_filter_pj + energy_sram_ofmap_pj
     energy_dram_pj = energy_dram_ifmap_pj + energy_dram_filter_pj + energy_dram_ofmap_pj
     total = energy_mac_pj + energy_sram_pj + energy_dram_pj

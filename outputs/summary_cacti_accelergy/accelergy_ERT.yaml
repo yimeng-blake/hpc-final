@@ -1,0 +1,180 @@
+ERT:
+  version: 0.4
+  tables_by_sram_budget_kb:
+  - sram_budget_kb: 256
+    sram_energy_source: cacti
+    sram_energy_table: configs/cacti_sram_45nm.csv
+    sram_access_bytes: 4
+    sram_technology_nm: 45.0
+    tables:
+    - name: accelerator.mac_array
+      actions:
+      - name: mac
+        arguments: {}
+        energy: 0.23
+    - name: accelerator.ifmap_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 6.5870750000000005
+      - name: write
+        arguments: {}
+        energy: 4.60835
+    - name: accelerator.filter_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 6.5870750000000005
+      - name: write
+        arguments: {}
+        energy: 4.60835
+    - name: accelerator.ofmap_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 6.5870750000000005
+      - name: write
+        arguments: {}
+        energy: 4.60835
+    - name: accelerator.ifmap_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+    - name: accelerator.filter_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+    - name: accelerator.ofmap_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+  - sram_budget_kb: 1024
+    sram_energy_source: cacti
+    sram_energy_table: configs/cacti_sram_45nm.csv
+    sram_access_bytes: 4
+    sram_technology_nm: 45.0
+    tables:
+    - name: accelerator.mac_array
+      actions:
+      - name: mac
+        arguments: {}
+        energy: 0.23
+    - name: accelerator.ifmap_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 10.323425
+      - name: write
+        arguments: {}
+        energy: 8.849225
+    - name: accelerator.filter_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 10.323425
+      - name: write
+        arguments: {}
+        energy: 8.849225
+    - name: accelerator.ofmap_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 10.323425
+      - name: write
+        arguments: {}
+        energy: 8.849225
+    - name: accelerator.ifmap_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+    - name: accelerator.filter_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+    - name: accelerator.ofmap_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+  - sram_budget_kb: 4096
+    sram_energy_source: cacti
+    sram_energy_table: configs/cacti_sram_45nm.csv
+    sram_access_bytes: 4
+    sram_technology_nm: 45.0
+    tables:
+    - name: accelerator.mac_array
+      actions:
+      - name: mac
+        arguments: {}
+        energy: 0.23
+    - name: accelerator.ifmap_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 21.085900000000002
+      - name: write
+        arguments: {}
+        energy: 17.167975
+    - name: accelerator.filter_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 21.085900000000002
+      - name: write
+        arguments: {}
+        energy: 17.167975
+    - name: accelerator.ofmap_sram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 21.085900000000002
+      - name: write
+        arguments: {}
+        energy: 17.167975
+    - name: accelerator.ifmap_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+    - name: accelerator.filter_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0
+    - name: accelerator.ofmap_dram
+      actions:
+      - name: read
+        arguments: {}
+        energy: 160.0
+      - name: write
+        arguments: {}
+        energy: 160.0

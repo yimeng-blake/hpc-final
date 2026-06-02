@@ -9,7 +9,8 @@ The goal is to find the **minimum-energy systolic array configuration** that can
 The final experiment uses:
 
 - **SCALE-Sim** for systolic-array performance simulation.
-- **Table-based Accelergy** for component-level energy accounting from SCALE-Sim action counts.
+- **CACTI 7.0.3DD** to derive SRAM read/write energy for each modeled SRAM capacity.
+- **Table-based Accelergy** to combine SCALE-Sim action counts with the CACTI-derived SRAM ERT and reference-level MAC/DRAM assumptions.
 - **Tiled full-frame scaling** to keep the simulation tractable.
 - **Deadline-constrained analysis** to select energy-efficient feasible designs.
 
@@ -116,7 +117,7 @@ Halo pixels are included because filters need neighboring input pixels around ea
 
 Halo pixels increase input memory traffic but do not increase the number of output pixels.
 
-## SCALE-Sim + Accelergy Methodology
+## SCALE-Sim + CACTI + Accelergy Methodology
 
 The final modeling pipeline is:
 
@@ -124,9 +125,11 @@ The final modeling pipeline is:
 2. Run the workloads through SCALE-Sim.
 3. Parse cycles, utilization, stalls, and detailed memory accesses.
 4. Scale tile-level metrics to full-frame metrics.
-5. Map SCALE-Sim action counts into Accelergy components.
-6. Use a table-based Accelergy Energy Reference Table (ERT) to calculate energy.
-7. Aggregate frame-level latency, energy, feasibility, and Pareto results.
+5. Run CACTI for each modeled SRAM capacity.
+6. Convert CACTI SRAM read/write energy into pJ per byte.
+7. Map SCALE-Sim action counts into Accelergy components.
+8. Use a table-based Accelergy Energy Reference Table (ERT) to calculate energy.
+9. Aggregate frame-level latency, energy, feasibility, and Pareto results.
 
 SCALE-Sim provides:
 
@@ -140,6 +143,16 @@ SCALE-Sim provides:
 - DRAM filter reads.
 - DRAM OFMAP writes.
 
+CACTI is used for the on-chip SRAM part of the energy model. The generated SRAM table is:
+
+| SRAM Budget | CACTI Read Energy | CACTI Write Energy | Technology | Access Width |
+| ---: | ---: | ---: | ---: | ---: |
+| 256 KB | 6.59 pJ/byte | 4.61 pJ/byte | 45 nm | 4 bytes |
+| 1024 KB | 10.32 pJ/byte | 8.85 pJ/byte | 45 nm | 4 bytes |
+| 4096 KB | 21.09 pJ/byte | 17.17 pJ/byte | 45 nm | 4 bytes |
+
+This matters because larger SRAMs now have higher access energy. The previous fixed-SRAM model treated all SRAM budgets as if they had the same pJ/byte cost.
+
 Accelergy is used in **table-based mode**. SCALE-Sim action counts are mapped to these Accelergy components:
 
 | SCALE-Sim Count | Accelergy Component | Action |
@@ -152,7 +165,7 @@ Accelergy is used in **table-based mode**. SCALE-Sim action counts are mapped to
 | DRAM filter reads | `accelerator.filter_dram` | `read` |
 | DRAM OFMAP writes | `accelerator.ofmap_dram` | `write` |
 
-This project intentionally does **not** use CACTI, Aladdin, or Timeloop. The Accelergy model is lightweight and reproducible, but the energy numbers should be treated as **relative comparisons**, not silicon-accurate measurements.
+The MAC energy is modeled as a reference-level 8-bit MAC assumption of **0.23 pJ per MAC**. DRAM energy is modeled as a reference-level off-chip cost of **160 pJ per byte**. CACTI is used only for on-chip SRAM, so the energy numbers should still be treated as **relative design comparisons**, not silicon-accurate measurements.
 
 ## Design Space
 
@@ -183,13 +196,15 @@ The sweep covers both workload parameters and hardware parameters.
 
 ```text
 configs/experiment.yaml       Main experiment specification.
+configs/cacti_sram_45nm.csv   CACTI-derived SRAM energy table.
 scripts/run_sweep.py          Runs SCALE-Sim sweeps with caching and resume support.
+scripts/run_cacti_sram_model.py Generates the SRAM energy table from a CACTI binary.
 scripts/summarize_results.py  Aggregates raw runs and generates CSVs/plots.
 scripts/smoke_test_scalesim.py Validates SCALE-Sim compatibility.
 scripts/smoke_test_accelergy.py Validates Accelergy energy accounting.
 src/hpc_final/                Reusable Python package for modeling and analysis.
-outputs/summary_accelergy/    Final Accelergy-backed summary CSVs.
-figures_accelergy/            Final plots generated from Accelergy-backed summaries.
+outputs/summary_cacti_accelergy/ Final CACTI + Accelergy summary CSVs.
+figures_cacti_accelergy/      Final plots generated from CACTI-backed summaries.
 misc/                         Archived non-core artifacts and legacy outputs.
 ```
 
@@ -213,6 +228,17 @@ GIT_CONFIG_VALUE_0=git@github.com: \
 'git+https://github.com/Accelergy-Project/accelergy.git@6911d15686ee7efdceba7d95605102df4472ae3a'
 ```
 
+CACTI is required only when regenerating `configs/cacti_sram_45nm.csv`. The checked-in table is already generated, but the model can be reproduced with a local CACTI build. The tested source is the Hewlett Packard CACTI repository:
+
+```bash
+git clone https://github.com/HewlettPackard/cacti.git /tmp/hpc-final-cacti
+cd /tmp/hpc-final-cacti
+perl -0pi -e 's/DeviceType \*dt = &\(g_tp\.peri_global\)/DeviceType *dt/' nuca.cc
+make -f cacti.mk TAG=opt OPT='-O2 -DNTHREADS=1' CXX='g++' CC='gcc' -j4
+```
+
+On Apple Silicon, the default CACTI makefile may fail because it includes old debug and x86 SSE flags. The command above bypasses those flags. The `perl` command removes a default argument from a CACTI constructor definition that newer Clang rejects.
+
 ## Running The Experiment
 
 Validate SCALE-Sim:
@@ -225,6 +251,18 @@ Validate Accelergy:
 
 ```bash
 .venv/bin/python scripts/smoke_test_accelergy.py
+```
+
+Regenerate the CACTI SRAM table if needed:
+
+```bash
+.venv/bin/python scripts/run_cacti_sram_model.py \
+  --cacti-bin /tmp/hpc-final-cacti/cacti \
+  --template /tmp/hpc-final-cacti/cache.cfg \
+  --out configs/cacti_sram_45nm.csv \
+  --work-dir misc/cacti \
+  --technology-um 0.045 \
+  --access-bytes 4
 ```
 
 Run the sanity sweep:
@@ -240,15 +278,15 @@ Run the full SCALE-Sim sweep:
 .venv/bin/python scripts/run_sweep.py --mode full --workers 4
 ```
 
-Generate final Accelergy-backed summaries and figures:
+Generate final CACTI + Accelergy-backed summaries and figures:
 
 ```bash
 .venv/bin/python scripts/summarize_results.py \
   --tile-width 128 \
   --tile-height 128 \
   --energy-backend accelergy \
-  --out outputs/summary_accelergy \
-  --figures figures_accelergy
+  --out outputs/summary_cacti_accelergy \
+  --figures figures_cacti_accelergy
 ```
 
 Run tests:
@@ -259,7 +297,7 @@ Run tests:
 
 ## Generated Outputs
 
-The final Accelergy-backed outputs are in `outputs/summary_accelergy/`.
+The final CACTI + Accelergy-backed outputs are in `outputs/summary_cacti_accelergy/`.
 
 | File | Description |
 | --- | --- |
@@ -270,7 +308,7 @@ The final Accelergy-backed outputs are in `outputs/summary_accelergy/`.
 | `pareto_frontier.csv` | Non-dominated feasible designs. |
 | `bottleneck_summary.csv` | Gaussian vs. Sobel latency and energy shares. |
 | `accelergy_action_counts.csv` | Component action counts passed into Accelergy. |
-| `accelergy_ERT.yaml` | Table-based Accelergy Energy Reference Table. |
+| `accelergy_ERT.yaml` | Table-based Accelergy Energy Reference Table with CACTI-derived SRAM entries by budget. |
 | `skipped_runs.csv` | Simulator cases excluded by resource guard. |
 
 The final dataset contains:
@@ -280,7 +318,7 @@ The final dataset contains:
 | Stage-level rows | 3,570 |
 | Complete pipeline configurations | 1,071 |
 | Feasibility rows | 3,213 |
-| Pareto-frontier rows | 270 |
+| Pareto-frontier rows | 153 |
 | Minimum-energy design rows | 36 |
 | Bottleneck-summary rows | 2,142 |
 | Accelergy action-count rows | 24,990 |
@@ -293,51 +331,51 @@ For the main **1080p @ 33 ms** scenario, the minimum-energy feasible designs are
 
 | Gaussian Kernel | Best Design | SRAM | Bandwidth | Latency | Energy |
 | --- | --- | ---: | ---: | ---: | ---: |
-| 3x3 | 32x32 output-stationary | 1024 KB | 50 GB/s | 10.07 ms | 4.64 mJ |
-| 5x5 | 32x32 output-stationary | 4096 KB | 50 GB/s | 11.77 ms | 8.14 mJ |
-| 7x7 | 32x32 output-stationary | 4096 KB | 50 GB/s | 14.32 ms | 13.40 mJ |
-| 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 29.91 mJ |
+| 3x3 | 32x32 output-stationary | 1024 KB | 50 GB/s | 10.07 ms | 7.53 mJ |
+| 5x5 | 32x32 weight-stationary | 256 KB | 50 GB/s | 4.61 ms | 13.69 mJ |
+| 7x7 | 64x64 weight-stationary | 256 KB | 50 GB/s | 4.64 ms | 22.29 mJ |
+| 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 47.43 mJ |
 
-The main result is that **32x32 output-stationary** arrays are energy-efficient for 3x3, 5x5, and 7x7 Gaussian kernels, while the larger 11x11 Gaussian kernel shifts the minimum-energy feasible design to a **128x128 weight-stationary** array.
+The main result is that the CACTI-backed SRAM model changes the design choices for medium and large kernels. Larger SRAMs now cost more energy per byte, so the minimum-energy feasible designs prefer **256 KB SRAM** for the 5x5, 7x7, and 11x11 cases. The 3x3 case still prefers a **32x32 output-stationary** array, while heavier kernels shift toward **weight-stationary** designs and larger arrays.
 
 ### Latency Scaling
 
-![Latency by array size](figures_accelergy/latency_by_array.png)
+![Latency by array size](figures_cacti_accelergy/latency_by_array.png)
 
 The latency plot shows that larger arrays reduce latency for heavier kernels, but latency improvements are not uniform across all kernel sizes. Small kernels can stop benefiting from larger arrays because their GEMM shapes do not expose enough work to keep very large arrays fully occupied.
 
 ### Energy Scaling
 
-![Energy by array size](figures_accelergy/energy_by_array.png)
+![Energy by array size](figures_cacti_accelergy/energy_by_array.png)
 
-Energy does not always decrease when array size increases. For small and medium Gaussian kernels, 32x32 is usually sufficient to meet the deadline and remains energy-efficient. For the 11x11 kernel, the workload is large enough that the 128x128 array becomes worthwhile.
+Energy does not always decrease when array size increases. The CACTI-backed results also show that larger SRAM budgets are not automatically better: larger SRAMs can reduce some traffic behavior, but their higher access energy can make them lose on total energy.
 
 ### Utilization And Stalls
 
-![Utilization by array size](figures_accelergy/utilization_by_array.png)
+![Utilization by array size](figures_cacti_accelergy/utilization_by_array.png)
 
-![Stall percentage by array size](figures_accelergy/stall_pct_by_array.png)
+![Stall percentage by array size](figures_cacti_accelergy/stall_pct_by_array.png)
 
 The utilization and stall plots help explain why larger arrays are not always the best energy choice. A large array has more compute capacity, but if the workload is skinny or too small, many processing elements may not contribute useful work.
 
 ### Stage Energy Share
 
-![Stage energy share](figures_accelergy/stage_energy_share.png)
+![Stage energy share](figures_cacti_accelergy/stage_energy_share.png)
 
 Gaussian blur becomes more dominant as kernel size grows:
 
 | Gaussian Kernel | Gaussian Energy Share | Sobel Energy Share |
 | --- | ---: | ---: |
-| 3x3 | 48.19% | 51.81% |
-| 5x5 | 70.14% | 29.86% |
-| 7x7 | 81.07% | 18.93% |
-| 11x11 | 91.36% | 8.64% |
+| 3x3 | 47.61% | 52.39% |
+| 5x5 | 67.16% | 32.84% |
+| 7x7 | 79.80% | 20.20% |
+| 11x11 | 90.48% | 9.52% |
 
 This confirms that for large kernels, the Gaussian stage dominates the pipeline. Optimizing Sobel has limited impact in the 11x11 case because Sobel is only a small fraction of total energy.
 
 ### Pareto Frontier
 
-![Pareto frontier](figures_accelergy/pareto_frontier.png)
+![Pareto frontier](figures_cacti_accelergy/pareto_frontier.png)
 
 The Pareto frontier shows the latency-energy tradeoff among feasible configurations. A Pareto design is not dominated by another design in both latency and energy. This is useful because the fastest design is not always the minimum-energy design.
 
@@ -347,7 +385,9 @@ The key architectural lesson is that **bigger hardware is not automatically bett
 
 A 128x128 systolic array has far more compute capacity than a 32x32 array, but that capacity is only useful if the workload can keep the array busy. For small kernels, the lowered GEMMs are skinny enough that the largest array can be underutilized. In those cases, a moderate 32x32 array can meet the frame deadline with lower energy.
 
-For the 11x11 Gaussian kernel, the situation changes. The Gaussian blur stage now performs 121 weighted input operations per output pixel, compared with only 9 for the 3x3 case. The larger workload creates enough computation for a 128x128 array to become useful. The best dataflow also shifts to weight-stationary, which is consistent with the increased reuse of filter weights in the larger Gaussian stage.
+The CACTI-backed SRAM model adds another tradeoff. A larger SRAM budget can be useful for performance, but CACTI estimates higher access energy for larger SRAMs. In the final results, this pushes the 5x5, 7x7, and 11x11 minimum-energy designs toward 256 KB SRAM instead of 4096 KB SRAM. This is the main reason the CACTI-backed experiment is more defensible than the previous fixed-SRAM ERT.
+
+For the 11x11 Gaussian kernel, the situation changes again. The Gaussian blur stage now performs 121 weighted input operations per output pixel, compared with only 9 for the 3x3 case. The larger workload creates enough computation for a 128x128 array to become useful. The best dataflow also shifts to weight-stationary, which is consistent with the increased reuse of filter weights in the larger Gaussian stage.
 
 The deadline-constrained framing matters. If the only goal were minimum latency, the experiment would favor larger and higher-bandwidth designs more often. But for an embedded real-time service, the system only needs to be fast enough. Once a design satisfies the 33 ms deadline, excess speed is less valuable than lower energy.
 
@@ -360,7 +400,9 @@ The main limitations are:
 - The workload models grayscale 8-bit images only.
 - The experiment evaluates accelerator performance, not image quality.
 - Full-frame behavior is estimated from tiled simulations and analytical scaling.
-- Accelergy is used in table-based mode, not with CACTI, Aladdin, or Timeloop technology calibration.
+- CACTI is used for SRAM dynamic access energy, but not for full accelerator timing, wire energy, leakage over frame time, or off-chip DRAM system energy.
+- MAC and DRAM energy still use reference-level assumptions.
+- Accelergy is used in table-based mode, not with Timeloop architecture mapping or Aladdin component modeling.
 - Energy values are best interpreted as relative design comparisons.
 - A small number of pathological SCALE-Sim cases were skipped by a resource guard and recorded in `skipped_runs.csv`.
 
@@ -371,7 +413,9 @@ The skipped cases are output-stationary 11x11 Gaussian full-tile simulations on 
 The final conclusions are:
 
 - The best systolic array is workload-dependent and deadline-dependent.
-- For 3x3, 5x5, and 7x7 Gaussian kernels, 32x32 output-stationary arrays are usually the most energy-efficient feasible designs.
+- CACTI-derived SRAM energy makes SRAM capacity part of the energy tradeoff instead of a fixed-cost parameter.
+- For the 3x3 Gaussian kernel, a 32x32 output-stationary array is the minimum-energy feasible design in the main 1080p @ 33 ms scenario.
+- For 5x5 and larger Gaussian kernels, the minimum-energy feasible designs shift toward weight-stationary dataflow and smaller SRAM budgets.
 - For the 11x11 Gaussian kernel, the workload becomes large enough that a 128x128 weight-stationary array becomes the best feasible design.
 - Gaussian blur becomes the dominant energy contributor as kernel size increases.
 - Minimum latency and minimum energy are different objectives.

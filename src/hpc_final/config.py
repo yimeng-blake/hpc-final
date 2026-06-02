@@ -8,7 +8,7 @@ import yaml
 
 def load_experiment_config(path: str | Path) -> dict[str, Any]:
     """Load and lightly validate the experiment YAML."""
-    config_path = Path(path)
+    config_path = Path(path).resolve()
     with config_path.open("r", encoding="utf-8") as handle:
         config = yaml.safe_load(handle)
 
@@ -34,6 +34,8 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
     if config["frequency_hz"] <= 0:
         raise ValueError("frequency_hz must be positive")
 
+    config["_config_path"] = str(config_path)
+    config["_config_dir"] = str(config_path.parent)
     return config
 
 
