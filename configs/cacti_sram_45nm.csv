@@ -1,4 +1,0 @@
-sram_budget_kb,capacity_bytes,technology_nm,access_bytes,bus_width_bits,cache_type,read_pj_per_access,write_pj_per_access,read_pj_per_byte,write_pj_per_byte,access_time_ns,cycle_time_ns,leakage_mw,gate_leakage_mw,area_mm2,source
-256,262144,45.0,4,32,ram,26.348300000000002,18.4334,6.5870750000000005,4.60835,1.14182,0.729013,270.818,7.01629,0.82173726504,CACTI 7.0.3DD scratch-RAM model
-1024,1048576,45.0,4,32,ram,41.2937,35.3969,10.323425,8.849225,2.03065,0.431177,1188.88,32.1517,3.192179885,CACTI 7.0.3DD scratch-RAM model
-4096,4194304,45.0,4,32,ram,84.34360000000001,68.6719,21.085900000000002,17.167975,3.18224,0.795423,4302.53,109.496,11.948249145600002,CACTI 7.0.3DD scratch-RAM model

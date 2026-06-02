@@ -8,7 +8,6 @@ __all__ = [
     "plots",
     "runner",
     "scalesim_io",
-    "sram_energy",
     "tiling",
     "workloads",
 ]

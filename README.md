@@ -9,39 +9,46 @@ The goal is to find the **minimum-energy systolic array configuration** that can
 The final experiment uses:
 
 - **SCALE-Sim** for systolic-array performance simulation.
-- **CACTI 7.0.3DD** to derive SRAM read/write energy for each modeled SRAM capacity.
-- **Table-based Accelergy** to combine SCALE-Sim action counts with the CACTI-derived SRAM ERT and reference-level MAC/DRAM assumptions.
-- **Tiled full-frame scaling** to keep the simulation tractable.
-- **Deadline-constrained analysis** to select energy-efficient feasible designs.
+- **Accelergy** for table-based ERT/action-count energy calculation.
+- **Tiled full-frame scaling** to keep the experiment tractable.
+- **Deadline-constrained design selection** to choose energy-efficient feasible hardware.
+
+This version follows the same general direction as the class SCALE-Sim + Accelergy assignments: simulate accelerator performance, convert the simulator results into action counts, apply an Accelergy Energy Reference Table, and report latency, energy, and EDP. CACTI is not part of the active pipeline.
 
 ## Problem Statement
 
-Embedded camera and vision systems often need to process frames periodically. For a 30 FPS system, every frame must finish processing in about 33 ms. A design that is extremely fast but wastes energy is not necessarily the best design. The more relevant design objective is:
+Embedded camera and vision systems often process frames on a fixed schedule. A 30 FPS system receives a new frame every 33 ms, so the accelerator must finish the full image-processing pipeline before the next frame arrives.
+
+A design that finishes in 2 ms may waste energy if a smaller design can finish in 20 ms. For a deadline-constrained embedded system, the useful objective is:
 
 > Minimize energy per frame while satisfying the frame deadline.
 
-This project models a grayscale front-end vision pipeline and asks:
+This project asks:
 
-> Given a fixed frame deadline, which systolic array size, SRAM budget, bandwidth, and dataflow provide the lowest energy while still completing Gaussian blur and Sobel edge detection on time?
+> Given a frame resolution and deadline, which systolic array size, SRAM budget, memory bandwidth, and dataflow gives the lowest energy while still completing Gaussian blur and Sobel edge detection on time?
 
-The optimization rule is:
+The selection rule is:
 
-1. Compute full-frame latency and energy for each configuration.
-2. Remove configurations that miss the deadline.
-3. Select the minimum-energy design among the remaining feasible configurations.
+1. Simulate each hardware design on the image-processing workload.
+2. Scale tile-level results to the full frame.
+3. Compute latency, energy, average power, and EDP.
+4. Remove designs that miss the deadline.
+5. Pick the minimum-energy design among the feasible designs.
 
 ## Workload Justification
 
-Gaussian blur and Sobel edge detection are classic DSP and embedded-vision kernels. They are simple enough to model clearly, but they are still meaningful because they touch every pixel in a frame.
+Gaussian blur and Sobel edge detection are good workloads for this project because they are classic DSP and embedded-vision kernels. They are simple enough to model clearly, but large enough to expose real architecture tradeoffs because they touch every pixel in every frame.
 
 A 1080p frame contains:
 
 - 1920 x 1080 pixels.
 - 2,073,600 total pixels.
 
-Even a small amount of work per pixel becomes significant when repeated across every frame.
+Even a small amount of computation per pixel becomes meaningful when repeated across the full frame and across every frame period.
 
-Gaussian blur smooths the image and reduces noise. Sobel edge detection estimates horizontal and vertical gradients to identify edges. The cost of Sobel stays fixed because Sobel uses 3x3 filters, while the Gaussian cost grows with kernel size:
+Gaussian blur smooths the image and reduces noise before edge detection. Sobel edge detection then estimates horizontal and vertical gradients to highlight edges. This is a common front-end image-processing pattern: first reduce noise, then detect structure.
+
+The Gaussian workload scales with kernel size:
 
 | Gaussian Kernel | Values Per Output Pixel |
 | --- | ---: |
@@ -50,34 +57,36 @@ Gaussian blur smooths the image and reduces noise. Sobel edge detection estimate
 | 7x7 | 49 |
 | 11x11 | 121 |
 
-This makes the workload useful for accelerator design exploration: as the Gaussian kernel grows, the pipeline bottleneck shifts, and the best systolic array design can change.
+Sobel uses the standard 3x3 Sobel filters, so its per-pixel filter size stays fixed. This creates a useful experiment: as the Gaussian kernel grows, the Gaussian stage becomes heavier and the best accelerator design can change.
 
 ## Pipeline Overview
 
-The modeled image-processing pipeline is:
+The modeled pipeline is:
 
-1. Input grayscale image frame.
-2. Gaussian blur.
-3. Sobel edge detection.
-4. Output edge frame.
+1. Read an 8-bit grayscale image frame.
+2. Run Gaussian blur.
+3. Run Sobel edge detection.
+4. Produce an output edge frame.
 
-The end-to-end frame latency is modeled as:
+The frame latency is modeled as:
 
 ```text
 T_frame = T_gaussian + T_sobel
 ```
 
-The end-to-end frame energy is modeled as:
+The frame energy is modeled as:
 
 ```text
 E_frame = E_gaussian + E_sobel
 ```
 
-The project focuses on accelerator behavior, not image-quality validation. It does not compare edge maps on real images. The workload is used as a representative embedded image-processing pipeline for performance and energy modeling.
+The output overhead is set to 0 cycles in `configs/experiment.yaml`. This is an explicit modeling assumption so the experiment focuses on the two compute stages.
+
+The project models accelerator behavior, not image quality. It does not compare real edge maps or tune filter coefficients visually. The workload is used as a representative embedded image-processing service.
 
 ## GEMM Lowering
 
-SCALE-Sim evaluates systolic-array matrix-style workloads, so Gaussian blur and Sobel edge detection are lowered into GEMM-like shapes.
+SCALE-Sim models matrix-style workloads on systolic arrays. Gaussian blur and Sobel edge detection are therefore lowered into GEMM-like shapes.
 
 For Gaussian blur:
 
@@ -95,47 +104,50 @@ N = 2
 K = 9
 ```
 
-Sobel uses `N = 2` because it computes horizontal and vertical gradient outputs. These lowered workloads are relatively skinny GEMMs, which matters because very large systolic arrays may be underutilized when the GEMM shape does not expose enough parallel work.
+`M` is the number of output pixels produced by the tile. `N` is the number of output channels or filters. `K` is the number of input values used to produce each output value.
 
-## Tiled Simulation Methodology
+Gaussian uses `N = 1` because one blurred grayscale output is produced per pixel. Sobel uses `N = 2` because Sobel computes two gradients: one horizontal gradient and one vertical gradient. Sobel uses `K = 9` because the standard Sobel operator is 3x3.
 
-Direct full-frame SCALE-Sim simulation for every hardware configuration would be expensive. Instead, this project uses tiled simulation and analytical full-frame scaling.
+These shapes are relatively skinny GEMMs. That matters because very large systolic arrays may not stay fully utilized when the matrix shape does not expose enough parallel work.
 
-The main output tile size is **128 x 128 pixels**. For each image frame, the model derives representative tile classes:
+## Tiled Simulation
+
+Directly simulating a full image frame for every configuration would be too slow. The experiment simulates representative tiles, then scales the results to the full frame.
+
+The main output tile size is **128 x 128 pixels**. For each frame, the model derives tile classes:
 
 - Full interior tile.
 - Right-edge tile.
 - Bottom-edge tile.
 - Corner tile.
 
-Only unique tile classes are simulated. Their cycle counts and memory-access counts are then multiplied by the number of corresponding tiles in the full frame.
+Only unique tile classes are simulated. Their cycles and memory accesses are multiplied by the number of times each tile class appears in the full frame.
 
-Halo pixels are included because filters need neighboring input pixels around each output tile:
+Halo pixels are included because convolution-style filters need neighboring input pixels:
 
 - Gaussian halo radius is `(kernel_size - 1) / 2`.
 - Sobel halo radius is `1`.
 
-Halo pixels increase input memory traffic but do not increase the number of output pixels.
+Halo pixels increase input memory traffic. They do not increase the number of output pixels.
 
-## SCALE-Sim + CACTI + Accelergy Methodology
+## SCALE-Sim + Accelergy Methodology
 
 The final modeling pipeline is:
 
 1. Generate Gaussian and Sobel GEMM workloads for each tile class.
-2. Run the workloads through SCALE-Sim.
-3. Parse cycles, utilization, stalls, and detailed memory accesses.
+2. Run each workload through SCALE-Sim.
+3. Parse cycles, stalls, utilization, and detailed memory accesses.
 4. Scale tile-level metrics to full-frame metrics.
-5. Run CACTI for each modeled SRAM capacity.
-6. Convert CACTI SRAM read/write energy into pJ per byte.
-7. Map SCALE-Sim action counts into Accelergy components.
-8. Use a table-based Accelergy Energy Reference Table (ERT) to calculate energy.
-9. Aggregate frame-level latency, energy, feasibility, and Pareto results.
+5. Convert SCALE-Sim memory and compute counts into Accelergy action counts.
+6. Generate a table-based Accelergy Energy Reference Table.
+7. Use Accelergy to calculate per-component and total energy.
+8. Aggregate latency, energy, power, EDP, feasibility, bottlenecks, and Pareto fronts.
 
-SCALE-Sim provides:
+SCALE-Sim provides the performance side:
 
 - Total cycles.
 - Stall cycles.
-- Overall utilization.
+- Utilization.
 - SRAM IFMAP reads.
 - SRAM filter reads.
 - SRAM OFMAP writes.
@@ -143,17 +155,7 @@ SCALE-Sim provides:
 - DRAM filter reads.
 - DRAM OFMAP writes.
 
-CACTI is used for the on-chip SRAM part of the energy model. The generated SRAM table is:
-
-| SRAM Budget | CACTI Read Energy | CACTI Write Energy | Technology | Access Width |
-| ---: | ---: | ---: | ---: | ---: |
-| 256 KB | 6.59 pJ/byte | 4.61 pJ/byte | 45 nm | 4 bytes |
-| 1024 KB | 10.32 pJ/byte | 8.85 pJ/byte | 45 nm | 4 bytes |
-| 4096 KB | 21.09 pJ/byte | 17.17 pJ/byte | 45 nm | 4 bytes |
-
-This matters because larger SRAMs now have higher access energy. The previous fixed-SRAM model treated all SRAM budgets as if they had the same pJ/byte cost.
-
-Accelergy is used in **table-based mode**. SCALE-Sim action counts are mapped to these Accelergy components:
+Accelergy provides the energy-accounting side. The project maps SCALE-Sim counts into these Accelergy components:
 
 | SCALE-Sim Count | Accelergy Component | Action |
 | --- | --- | --- |
@@ -165,15 +167,27 @@ Accelergy is used in **table-based mode**. SCALE-Sim action counts are mapped to
 | DRAM filter reads | `accelerator.filter_dram` | `read` |
 | DRAM OFMAP writes | `accelerator.ofmap_dram` | `write` |
 
-The MAC energy is modeled as a reference-level 8-bit MAC assumption of **0.23 pJ per MAC**. DRAM energy is modeled as a reference-level off-chip cost of **160 pJ per byte**. CACTI is used only for on-chip SRAM, so the energy numbers should still be treated as **relative design comparisons**, not silicon-accurate measurements.
+The ERT values are configured in `configs/experiment.yaml`:
+
+| Action Type | Energy |
+| --- | ---: |
+| 8-bit MAC | 0.23 pJ/action |
+| SRAM byte access | 5.0 pJ/byte |
+| DRAM byte access | 160.0 pJ/byte |
+
+These values are **assignment-style ERT assumptions**. Accelergy applies them consistently to the action counts, but it does not create technology-specific SRAM or DRAM costs by itself. For this final version, the point is reproducible comparative energy modeling across the design sweep, not silicon-accurate energy prediction.
+
+The generated Accelergy files are saved in `outputs/summary_accelergy/`:
+
+- `accelergy_action_counts.csv`
+- `accelergy_ERT.yaml`
+- `accelergy_backend.yaml`
 
 ## Design Space
 
 The sweep covers both workload parameters and hardware parameters.
 
-### Workload Parameters
-
-| Parameter | Values |
+| Workload Parameter | Values |
 | --- | --- |
 | Resolutions | 720p, 1080p, 2048 x 2048 |
 | Gaussian kernels | 3x3, 5x5, 7x7, 11x11 |
@@ -181,9 +195,7 @@ The sweep covers both workload parameters and hardware parameters.
 | Primary tile size | 128 x 128 |
 | Sanity tile size | 64 x 64 |
 
-### Hardware Parameters
-
-| Parameter | Values |
+| Hardware Parameter | Values |
 | --- | --- |
 | Array sizes | 8x8, 16x16, 32x32, 64x64, 128x128 |
 | SRAM budgets | 256 KB, 1024 KB, 4096 KB |
@@ -192,20 +204,20 @@ The sweep covers both workload parameters and hardware parameters.
 | Frequency | 1 GHz |
 | Word size | 1 byte |
 
+The summary also reports `cycles_x_pes`, which matches the class assignment style of comparing cycle count against the amount of hardware used.
+
 ## Repository Layout
 
 ```text
-configs/experiment.yaml       Main experiment specification.
-configs/cacti_sram_45nm.csv   CACTI-derived SRAM energy table.
-scripts/run_sweep.py          Runs SCALE-Sim sweeps with caching and resume support.
-scripts/run_cacti_sram_model.py Generates the SRAM energy table from a CACTI binary.
-scripts/summarize_results.py  Aggregates raw runs and generates CSVs/plots.
+configs/experiment.yaml        Main experiment specification and ERT assumptions.
+scripts/run_sweep.py           Runs SCALE-Sim sweeps with caching and resume support.
+scripts/summarize_results.py   Aggregates raw runs and generates CSVs/plots.
 scripts/smoke_test_scalesim.py Validates SCALE-Sim compatibility.
-scripts/smoke_test_accelergy.py Validates Accelergy energy accounting.
-src/hpc_final/                Reusable Python package for modeling and analysis.
-outputs/summary_cacti_accelergy/ Final CACTI + Accelergy summary CSVs.
-figures_cacti_accelergy/      Final plots generated from CACTI-backed summaries.
-misc/                         Archived non-core artifacts and legacy outputs.
+scripts/smoke_test_accelergy.py Validates Accelergy ERT/action-count accounting.
+src/hpc_final/                 Reusable Python package for modeling and analysis.
+outputs/summary_accelergy/     Final Accelergy-backed summary CSVs and ERT files.
+figures_accelergy/             Final plots generated from Accelergy-backed summaries.
+misc/                          Archived non-core artifacts and older explanation files.
 ```
 
 ## Setup
@@ -218,26 +230,7 @@ Create or use a Python virtual environment, then install the required packages:
 
 `numpy==1.26.4` is pinned because SCALE-Sim 3.0.0 has NumPy 2.x compatibility issues in this environment.
 
-Accelergy is optional for the analytical path, but required for the Accelergy-backed summaries. Install the tested GitHub version with:
-
-```bash
-GIT_CONFIG_COUNT=1 \
-GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf \
-GIT_CONFIG_VALUE_0=git@github.com: \
-.venv/bin/python -m pip install \
-'git+https://github.com/Accelergy-Project/accelergy.git@6911d15686ee7efdceba7d95605102df4472ae3a'
-```
-
-CACTI is required only when regenerating `configs/cacti_sram_45nm.csv`. The checked-in table is already generated, but the model can be reproduced with a local CACTI build. The tested source is the Hewlett Packard CACTI repository:
-
-```bash
-git clone https://github.com/HewlettPackard/cacti.git /tmp/hpc-final-cacti
-cd /tmp/hpc-final-cacti
-perl -0pi -e 's/DeviceType \*dt = &\(g_tp\.peri_global\)/DeviceType *dt/' nuca.cc
-make -f cacti.mk TAG=opt OPT='-O2 -DNTHREADS=1' CXX='g++' CC='gcc' -j4
-```
-
-On Apple Silicon, the default CACTI makefile may fail because it includes old debug and x86 SSE flags. The command above bypasses those flags. The `perl` command removes a default argument from a CACTI constructor definition that newer Clang rejects.
+Accelergy is installed from a pinned GitHub commit in `requirements.txt`. CACTI is not required for the final pipeline.
 
 ## Running The Experiment
 
@@ -253,23 +246,11 @@ Validate Accelergy:
 .venv/bin/python scripts/smoke_test_accelergy.py
 ```
 
-Regenerate the CACTI SRAM table if needed:
-
-```bash
-.venv/bin/python scripts/run_cacti_sram_model.py \
-  --cacti-bin /tmp/hpc-final-cacti/cacti \
-  --template /tmp/hpc-final-cacti/cache.cfg \
-  --out configs/cacti_sram_45nm.csv \
-  --work-dir misc/cacti \
-  --technology-um 0.045 \
-  --access-bytes 4
-```
-
 Run the sanity sweep:
 
 ```bash
 .venv/bin/python scripts/run_sweep.py --mode sanity
-.venv/bin/python scripts/summarize_results.py
+.venv/bin/python scripts/summarize_results.py --energy-backend accelergy
 ```
 
 Run the full SCALE-Sim sweep:
@@ -278,15 +259,17 @@ Run the full SCALE-Sim sweep:
 .venv/bin/python scripts/run_sweep.py --mode full --workers 4
 ```
 
-Generate final CACTI + Accelergy-backed summaries and figures:
+Generate final Accelergy-backed summaries and figures:
 
 ```bash
 .venv/bin/python scripts/summarize_results.py \
+  --config configs/experiment.yaml \
+  --results outputs/raw \
+  --energy-backend accelergy \
   --tile-width 128 \
   --tile-height 128 \
-  --energy-backend accelergy \
-  --out outputs/summary_cacti_accelergy \
-  --figures figures_cacti_accelergy
+  --out outputs/summary_accelergy \
+  --figures figures_accelergy
 ```
 
 Run tests:
@@ -297,7 +280,7 @@ Run tests:
 
 ## Generated Outputs
 
-The final CACTI + Accelergy-backed outputs are in `outputs/summary_cacti_accelergy/`.
+The final outputs are in `outputs/summary_accelergy/`.
 
 | File | Description |
 | --- | --- |
@@ -308,8 +291,9 @@ The final CACTI + Accelergy-backed outputs are in `outputs/summary_cacti_acceler
 | `pareto_frontier.csv` | Non-dominated feasible designs. |
 | `bottleneck_summary.csv` | Gaussian vs. Sobel latency and energy shares. |
 | `accelergy_action_counts.csv` | Component action counts passed into Accelergy. |
-| `accelergy_ERT.yaml` | Table-based Accelergy Energy Reference Table with CACTI-derived SRAM entries by budget. |
-| `skipped_runs.csv` | Simulator cases excluded by resource guard. |
+| `accelergy_ERT.yaml` | Table-based Accelergy Energy Reference Table. |
+| `accelergy_backend.yaml` | Metadata describing the Accelergy backend and ERT values. |
+| `skipped_runs.csv` | Simulator cases excluded by the resource guard. |
 
 The final dataset contains:
 
@@ -318,92 +302,104 @@ The final dataset contains:
 | Stage-level rows | 3,570 |
 | Complete pipeline configurations | 1,071 |
 | Feasibility rows | 3,213 |
-| Pareto-frontier rows | 153 |
+| Pareto-frontier rows | 273 |
 | Minimum-energy design rows | 36 |
 | Bottleneck-summary rows | 2,142 |
 | Accelergy action-count rows | 24,990 |
+| Skipped simulator cases | 9 |
 
 ## Results
 
-### Minimum-Energy Feasible Designs
-
 For the main **1080p @ 33 ms** scenario, the minimum-energy feasible designs are:
 
-| Gaussian Kernel | Best Design | SRAM | Bandwidth | Latency | Energy |
-| --- | --- | ---: | ---: | ---: | ---: |
-| 3x3 | 32x32 output-stationary | 1024 KB | 50 GB/s | 10.07 ms | 7.53 mJ |
-| 5x5 | 32x32 weight-stationary | 256 KB | 50 GB/s | 4.61 ms | 13.69 mJ |
-| 7x7 | 64x64 weight-stationary | 256 KB | 50 GB/s | 4.64 ms | 22.29 mJ |
-| 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 47.43 mJ |
+| Gaussian Kernel | Best Design | SRAM | Bandwidth | Latency | Energy | EDP |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 3x3 | 32x32 output-stationary | 1024 KB | 50 GB/s | 10.07 ms | 7.26 mJ | 73.15 mJ-ms |
+| 5x5 | 32x32 output-stationary | 4096 KB | 50 GB/s | 11.77 ms | 12.76 mJ | 150.22 mJ-ms |
+| 7x7 | 32x32 output-stationary | 4096 KB | 50 GB/s | 14.32 ms | 21.01 mJ | 300.91 mJ-ms |
+| 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 47.00 mJ | 357.99 mJ-ms |
 
-The main result is that the CACTI-backed SRAM model changes the design choices for medium and large kernels. Larger SRAMs now cost more energy per byte, so the minimum-energy feasible designs prefer **256 KB SRAM** for the 5x5, 7x7, and 11x11 cases. The 3x3 case still prefers a **32x32 output-stationary** array, while heavier kernels shift toward **weight-stationary** designs and larger arrays.
+The 3x3, 5x5, and 7x7 cases all meet the 33 ms deadline with a 32x32 array. The 11x11 Gaussian case is much heavier, so the minimum-energy feasible design shifts to a 128x128 weight-stationary array.
+
+The same pattern appears across the other 33 ms scenarios:
+
+| Resolution | Kernel | Best Design | Latency | Energy |
+| --- | ---: | --- | ---: | ---: |
+| 720p | 3x3 | 32x32 OS, 1024 KB, 50 GB/s | 4.48 ms | 3.23 mJ |
+| 720p | 5x5 | 32x32 OS, 4096 KB, 50 GB/s | 5.23 ms | 5.67 mJ |
+| 720p | 7x7 | 32x32 OS, 4096 KB, 50 GB/s | 6.37 ms | 9.34 mJ |
+| 720p | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 3.39 ms | 20.92 mJ |
+| 2048x2048 | 3x3 | 32x32 OS, 1024 KB, 50 GB/s | 20.37 ms | 14.69 mJ |
+| 2048x2048 | 5x5 | 32x32 OS, 4096 KB, 50 GB/s | 23.81 ms | 25.81 mJ |
+| 2048x2048 | 7x7 | 32x32 OS, 4096 KB, 50 GB/s | 28.97 ms | 42.49 mJ |
+| 2048x2048 | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 15.37 ms | 94.80 mJ |
 
 ### Latency Scaling
 
-![Latency by array size](figures_cacti_accelergy/latency_by_array.png)
+![Latency by array size](figures_accelergy/latency_by_array.png)
 
-The latency plot shows that larger arrays reduce latency for heavier kernels, but latency improvements are not uniform across all kernel sizes. Small kernels can stop benefiting from larger arrays because their GEMM shapes do not expose enough work to keep very large arrays fully occupied.
+Latency improves as array size increases, especially for heavier kernels. The improvement is not uniform. Smaller kernels can stop benefiting from larger arrays because their lowered GEMM shapes do not keep every processing element busy.
 
 ### Energy Scaling
 
-![Energy by array size](figures_cacti_accelergy/energy_by_array.png)
+![Energy by array size](figures_accelergy/energy_by_array.png)
 
-Energy does not always decrease when array size increases. The CACTI-backed results also show that larger SRAM budgets are not automatically better: larger SRAMs can reduce some traffic behavior, but their higher access energy can make them lose on total energy.
+Energy is affected by both work and hardware utilization. A larger array can reduce latency, but extra compute capacity does not automatically reduce energy. In this Accelergy ERT version, SRAM access energy is fixed per byte across all SRAM capacities, so SRAM capacity affects energy through the SCALE-Sim access counts rather than through different SRAM circuit costs.
 
 ### Utilization And Stalls
 
-![Utilization by array size](figures_cacti_accelergy/utilization_by_array.png)
+![Utilization by array size](figures_accelergy/utilization_by_array.png)
 
-![Stall percentage by array size](figures_cacti_accelergy/stall_pct_by_array.png)
+![Stall percentage by array size](figures_accelergy/stall_pct_by_array.png)
 
-The utilization and stall plots help explain why larger arrays are not always the best energy choice. A large array has more compute capacity, but if the workload is skinny or too small, many processing elements may not contribute useful work.
+The utilization and stall plots explain why the largest array is not always the best design. A 128x128 array has more processing elements, but skinny GEMM shapes can leave many of them underused. This is why moderate arrays can be more energy-efficient for smaller kernels.
 
 ### Stage Energy Share
 
-![Stage energy share](figures_cacti_accelergy/stage_energy_share.png)
+![Stage energy share](figures_accelergy/stage_energy_share.png)
 
-Gaussian blur becomes more dominant as kernel size grows:
+For the 1080p @ 33 ms minimum-energy designs, the stage energy shares are:
 
 | Gaussian Kernel | Gaussian Energy Share | Sobel Energy Share |
 | --- | ---: | ---: |
-| 3x3 | 47.61% | 52.39% |
-| 5x5 | 67.16% | 32.84% |
-| 7x7 | 79.80% | 20.20% |
-| 11x11 | 90.48% | 9.52% |
+| 3x3 | 47.59% | 52.41% |
+| 5x5 | 70.17% | 29.83% |
+| 7x7 | 81.88% | 18.12% |
+| 11x11 | 90.45% | 9.55% |
 
-This confirms that for large kernels, the Gaussian stage dominates the pipeline. Optimizing Sobel has limited impact in the 11x11 case because Sobel is only a small fraction of total energy.
+The Gaussian stage becomes dominant as kernel size grows. For the 11x11 case, most of the energy is spent in Gaussian blur, so optimizing Sobel would have limited impact on total frame energy.
 
 ### Pareto Frontier
 
-![Pareto frontier](figures_cacti_accelergy/pareto_frontier.png)
+![Pareto frontier](figures_accelergy/pareto_frontier.png)
 
-The Pareto frontier shows the latency-energy tradeoff among feasible configurations. A Pareto design is not dominated by another design in both latency and energy. This is useful because the fastest design is not always the minimum-energy design.
+The Pareto frontier shows the latency-energy tradeoff among feasible configurations. A Pareto design is one where no other feasible design is both faster and lower energy. This matters because minimum latency and minimum energy are different objectives.
 
 ## Discussion
 
-The key architectural lesson is that **bigger hardware is not automatically better**.
+The main architectural result is that the best systolic array depends on the workload and deadline.
 
-A 128x128 systolic array has far more compute capacity than a 32x32 array, but that capacity is only useful if the workload can keep the array busy. For small kernels, the lowered GEMMs are skinny enough that the largest array can be underutilized. In those cases, a moderate 32x32 array can meet the frame deadline with lower energy.
+For 3x3, 5x5, and 7x7 Gaussian kernels, a 32x32 output-stationary array is enough to meet the 33 ms deadline for the tested resolutions. Moving to a larger array can reduce latency, but the extra hardware does not always reduce energy.
 
-The CACTI-backed SRAM model adds another tradeoff. A larger SRAM budget can be useful for performance, but CACTI estimates higher access energy for larger SRAMs. In the final results, this pushes the 5x5, 7x7, and 11x11 minimum-energy designs toward 256 KB SRAM instead of 4096 KB SRAM. This is the main reason the CACTI-backed experiment is more defensible than the previous fixed-SRAM ERT.
+For the 11x11 Gaussian kernel, the computation per output pixel rises to 121 Gaussian filter values before Sobel even runs. That larger workload gives the 128x128 weight-stationary array enough work to become the minimum-energy feasible design. The dataflow shift also makes sense because the larger Gaussian filter increases weight reuse.
 
-For the 11x11 Gaussian kernel, the situation changes again. The Gaussian blur stage now performs 121 weighted input operations per output pixel, compared with only 9 for the 3x3 case. The larger workload creates enough computation for a 128x128 array to become useful. The best dataflow also shifts to weight-stationary, which is consistent with the increased reuse of filter weights in the larger Gaussian stage.
+The deadline framing changes the design decision. A real-time embedded service only needs to finish before the next frame period. Once a design satisfies the deadline, lower energy becomes more valuable than extra speed.
 
-The deadline-constrained framing matters. If the only goal were minimum latency, the experiment would favor larger and higher-bandwidth designs more often. But for an embedded real-time service, the system only needs to be fast enough. Once a design satisfies the 33 ms deadline, excess speed is less valuable than lower energy.
+The Accelergy path makes the energy calculation more structured than a single spreadsheet formula. SCALE-Sim produces per-stage action counts, the repo writes an explicit ERT, and Accelergy calculates per-component energy. The pJ/action values still come from the experiment configuration, so the results should be presented as comparative modeling results rather than measured hardware energy.
 
 ## Limitations
 
-This experiment is intentionally scoped for a reproducible class project.
+This experiment is scoped for a reproducible class project.
 
 The main limitations are:
 
 - The workload models grayscale 8-bit images only.
-- The experiment evaluates accelerator performance, not image quality.
+- The experiment evaluates accelerator performance and energy modeling, not image quality.
 - Full-frame behavior is estimated from tiled simulations and analytical scaling.
-- CACTI is used for SRAM dynamic access energy, but not for full accelerator timing, wire energy, leakage over frame time, or off-chip DRAM system energy.
-- MAC and DRAM energy still use reference-level assumptions.
-- Accelergy is used in table-based mode, not with Timeloop architecture mapping or Aladdin component modeling.
-- Energy values are best interpreted as relative design comparisons.
+- Accelergy uses a table-based ERT with configurable pJ/action assumptions.
+- CACTI, Aladdin, and Timeloop are not used in the active final pipeline.
+- The energy values are best interpreted as relative design comparisons.
+- Leakage, wire energy, full memory-controller behavior, and host-system overhead are outside the model.
 - A small number of pathological SCALE-Sim cases were skipped by a resource guard and recorded in `skipped_runs.csv`.
 
 The skipped cases are output-stationary 11x11 Gaussian full-tile simulations on 128x128 arrays. They triggered excessive SCALE-Sim demand generation and were excluded from full pipeline summaries so partial tile results would not contaminate frame-level metrics.
@@ -412,14 +408,14 @@ The skipped cases are output-stationary 11x11 Gaussian full-tile simulations on 
 
 The final conclusions are:
 
-- The best systolic array is workload-dependent and deadline-dependent.
-- CACTI-derived SRAM energy makes SRAM capacity part of the energy tradeoff instead of a fixed-cost parameter.
-- For the 3x3 Gaussian kernel, a 32x32 output-stationary array is the minimum-energy feasible design in the main 1080p @ 33 ms scenario.
-- For 5x5 and larger Gaussian kernels, the minimum-energy feasible designs shift toward weight-stationary dataflow and smaller SRAM budgets.
-- For the 11x11 Gaussian kernel, the workload becomes large enough that a 128x128 weight-stationary array becomes the best feasible design.
+- Gaussian blur plus Sobel edge detection is a tangible real-time embedded image-processing workload.
+- Tiled SCALE-Sim simulation makes full-frame design exploration feasible.
+- Accelergy provides reproducible component-level energy accounting from action counts and an explicit ERT.
+- The best array is workload-dependent and deadline-dependent.
+- For 3x3, 5x5, and 7x7 Gaussian kernels, the minimum-energy feasible 1080p @ 33 ms design is a 32x32 output-stationary array.
+- For the 11x11 Gaussian kernel, the minimum-energy feasible 1080p @ 33 ms design shifts to a 128x128 weight-stationary array.
 - Gaussian blur becomes the dominant energy contributor as kernel size increases.
-- Minimum latency and minimum energy are different objectives.
-- In a deadline-constrained embedded system, the best design is not necessarily the fastest design; it is the lowest-energy design that is fast enough.
+- Minimum latency and minimum energy lead to different design choices.
 
 In short:
 

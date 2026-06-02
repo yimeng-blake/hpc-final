@@ -9,7 +9,6 @@ import pandas as pd
 from .accelergy_backend import write_accelergy_reference_files
 from .energy import energy_breakdown_from_access_counts_pj
 from .parser import parse_reports, reports_exist
-from .sram_energy import dram_energy_params, sram_energy_for_budget
 
 
 GROUP_COLS = [
@@ -30,6 +29,25 @@ def _num(value: Any) -> float:
     return float(value)
 
 
+def _energy_params(config: dict) -> dict[str, float | str]:
+    energy_config = config["energy"]
+    sram_read = energy_config.get("sram_read_pj_per_byte", energy_config.get("sram_pj_per_byte"))
+    sram_write = energy_config.get("sram_write_pj_per_byte", energy_config.get("sram_pj_per_byte"))
+    dram_read = energy_config.get("dram_read_pj_per_byte", energy_config.get("dram_pj_per_byte"))
+    dram_write = energy_config.get("dram_write_pj_per_byte", energy_config.get("dram_pj_per_byte"))
+    if sram_read is None or sram_write is None:
+        raise KeyError("SRAM energy requires sram_pj_per_byte or separate sram_read/write_pj_per_byte values")
+    if dram_read is None or dram_write is None:
+        raise KeyError("DRAM energy requires dram_pj_per_byte or separate dram_read/write_pj_per_byte values")
+    return {
+        "energy_model": energy_config.get("model", "table_based_accelergy"),
+        "sram_read_pj_per_byte": float(sram_read),
+        "sram_write_pj_per_byte": float(sram_write),
+        "dram_read_pj_per_byte": float(dram_read),
+        "dram_write_pj_per_byte": float(dram_write),
+    }
+
+
 def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> list[dict]:
     metadata_path = run_dir / "metadata.json"
     if not metadata_path.exists():
@@ -47,9 +65,8 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
     else:
         metadata_items = [base_metadata]
 
+    energy_params = _energy_params(config)
     for metadata in metadata_items:
-        sram_energy = sram_energy_for_budget(config, int(metadata["sram_budget_kb"]))
-        dram_energy = dram_energy_params(config)
         stage_meta = {stage["name"]: stage for stage in metadata["stages"]}
         for record in parsed:
             stage = stage_meta[record["stage"]]
@@ -88,10 +105,10 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
                 dram_ofmap_writes=scaled_dram_ofmap_writes,
                 word_bytes=metadata["word_bytes"],
                 mac_pj=config["energy"]["mac_pj"],
-                sram_read_pj_per_byte=sram_energy["sram_read_pj_per_byte"],
-                sram_write_pj_per_byte=sram_energy["sram_write_pj_per_byte"],
-                dram_read_pj_per_byte=dram_energy["dram_read_pj_per_byte"],
-                dram_write_pj_per_byte=dram_energy["dram_write_pj_per_byte"],
+                sram_read_pj_per_byte=energy_params["sram_read_pj_per_byte"],
+                sram_write_pj_per_byte=energy_params["sram_write_pj_per_byte"],
+                dram_read_pj_per_byte=energy_params["dram_read_pj_per_byte"],
+                dram_write_pj_per_byte=energy_params["dram_write_pj_per_byte"],
                 backend=energy_backend,
             )
 
@@ -132,8 +149,7 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
                     "compute_util_pct": _num(record["compute_compute_util_pct"]),
                     "analytical_lower_bound_ms": metadata["analytical_lower_bound_ms"],
                     "energy_backend": energy_backend,
-                    **sram_energy,
-                    **dram_energy,
+                    **energy_params,
                     **energy,
                 }
             )
@@ -223,21 +239,16 @@ def pipeline_summary(stage_df: pd.DataFrame, config: dict) -> pd.DataFrame:
             energy_total_pj=("energy_total_pj", "sum"),
             analytical_lower_bound_ms=("analytical_lower_bound_ms", "first"),
             energy_backend=("energy_backend", "first"),
-            sram_energy_source=("sram_energy_source", "first"),
-            sram_energy_table=("sram_energy_table", "first"),
+            energy_model=("energy_model", "first"),
             sram_read_pj_per_byte=("sram_read_pj_per_byte", "first"),
             sram_write_pj_per_byte=("sram_write_pj_per_byte", "first"),
-            sram_access_bytes=("sram_access_bytes", "first"),
-            sram_technology_nm=("sram_technology_nm", "first"),
-            sram_access_time_ns=("sram_access_time_ns", "first"),
-            sram_cycle_time_ns=("sram_cycle_time_ns", "first"),
-            sram_leakage_mw=("sram_leakage_mw", "first"),
-            sram_area_mm2=("sram_area_mm2", "first"),
             dram_read_pj_per_byte=("dram_read_pj_per_byte", "first"),
             dram_write_pj_per_byte=("dram_write_pj_per_byte", "first"),
         )
     )
     agg["latency_ms"] = agg["total_cycles"] / config["frequency_hz"] * 1000
+    agg["num_pes"] = agg["array_size"] * agg["array_size"]
+    agg["cycles_x_pes"] = agg["total_cycles"] * agg["num_pes"]
     agg["stall_pct"] = agg["total_stall_cycles"] / agg["total_cycles"].where(agg["total_cycles"] != 0, 1) * 100
     agg["energy_total_mj"] = agg["energy_total_pj"] / 1_000_000_000
     agg["edp_mj_ms"] = agg["energy_total_mj"] * agg["latency_ms"]

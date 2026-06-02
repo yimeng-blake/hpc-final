@@ -9,6 +9,7 @@ dependencies = [
   "matplotlib>=3.8",
   "PyYAML>=6.0",
   "scalesim==3.0.0",
+  "accelergy @ git+https://github.com/Accelergy-Project/accelergy.git@6911d15686ee7efdceba7d95605102df4472ae3a",
 ]
 
 [tool.pytest.ini_options]

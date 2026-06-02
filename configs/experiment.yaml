@@ -39,15 +39,13 @@ sanity_sweep:
   dataflows: ["ws"]
 
 energy:
+  model: "assignment_style_accelergy_ert"
   mac_pj: 0.23
-  mac_source: "Reference-level 8-bit MAC assumption; modeled as 8-bit multiply plus add."
+  mac_source: "Configurable assignment-style ERT assumption for 8-bit MAC actions."
+  sram_pj_per_byte: 5.0
+  sram_source: "Configurable assignment-style ERT assumption for on-chip SRAM byte accesses."
   dram_pj_per_byte: 160.0
-  dram_source: "Reference-level off-chip DRAM assumption; CACTI is used only for on-chip SRAM."
-  sram:
-    source: "cacti"
-    table: "cacti_sram_45nm.csv"
-    technology_nm: 45
-    access_bytes: 4
+  dram_source: "Configurable assignment-style ERT assumption for off-chip DRAM byte accesses."
 
 scalesim:
   read_request_buffer: 32

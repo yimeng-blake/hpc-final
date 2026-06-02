@@ -5,8 +5,6 @@ from typing import Any
 
 import yaml
 
-from .sram_energy import dram_energy_params, sram_energy_for_budget
-
 
 ACCELERGY_COMPONENTS = {
     "mac": "accelerator.mac_array",
@@ -186,46 +184,37 @@ def accelergy_energy_breakdown_pj(
 def write_accelergy_reference_files(config: dict, out_dir: str | Path) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
-    dram = dram_energy_params(config)
-    ert_by_budget = []
-    for sram_budget_kb in config["sram_budgets_kb"]:
-        sram = sram_energy_for_budget(config, int(sram_budget_kb))
-        ert = accelergy_ert_dict(
-            word_bytes=config["word_bytes"],
-            mac_pj=config["energy"]["mac_pj"],
-            sram_read_pj_per_byte=sram["sram_read_pj_per_byte"],
-            sram_write_pj_per_byte=sram["sram_write_pj_per_byte"],
-            dram_read_pj_per_byte=dram["dram_read_pj_per_byte"],
-            dram_write_pj_per_byte=dram["dram_write_pj_per_byte"],
-        )
-        ert_by_budget.append(
-            {
-                "sram_budget_kb": int(sram_budget_kb),
-                "sram_energy_source": sram["sram_energy_source"],
-                "sram_energy_table": sram["sram_energy_table"],
-                "sram_access_bytes": sram["sram_access_bytes"],
-                "sram_technology_nm": sram["sram_technology_nm"],
-                "tables": [
-                    {
-                        "name": component,
-                        "actions": [
-                            {
-                                "name": action_name,
-                                "arguments": action_info["arguments"],
-                                "energy": action_info["energy"],
-                            }
-                            for action_name, action_entries in actions.items()
-                            for action_info in action_entries
-                        ],
-                    }
-                    for component, actions in ert.items()
-                ],
-            }
-        )
+    energy_config = config["energy"]
+    sram_read = energy_config.get("sram_read_pj_per_byte", energy_config.get("sram_pj_per_byte"))
+    sram_write = energy_config.get("sram_write_pj_per_byte", energy_config.get("sram_pj_per_byte"))
+    dram_read = energy_config.get("dram_read_pj_per_byte", energy_config.get("dram_pj_per_byte"))
+    dram_write = energy_config.get("dram_write_pj_per_byte", energy_config.get("dram_pj_per_byte"))
+    ert = accelergy_ert_dict(
+        word_bytes=config["word_bytes"],
+        mac_pj=energy_config["mac_pj"],
+        sram_read_pj_per_byte=float(sram_read),
+        sram_write_pj_per_byte=float(sram_write),
+        dram_read_pj_per_byte=float(dram_read),
+        dram_write_pj_per_byte=float(dram_write),
+    )
     payload = {
         "ERT": {
             "version": 0.4,
-            "tables_by_sram_budget_kb": ert_by_budget,
+            "tables": [
+                {
+                    "name": component,
+                    "actions": [
+                        {
+                            "name": action_name,
+                            "arguments": action_info["arguments"],
+                            "energy": action_info["energy"],
+                        }
+                        for action_name, action_entries in actions.items()
+                        for action_info in action_entries
+                    ],
+                }
+                for component, actions in ert.items()
+            ],
         }
     }
     (out_path / "accelergy_backend.yaml").write_text(
@@ -234,10 +223,12 @@ def write_accelergy_reference_files(config: dict, out_dir: str | Path) -> None:
                 "energy_backend": "accelergy",
                 "source": "SCALE-Sim component action counts with Accelergy table-based ERT/action-count energy calculation",
                 "word_bytes": config["word_bytes"],
-                "mac_pj": config["energy"]["mac_pj"],
-                "dram_read_pj_per_byte": dram["dram_read_pj_per_byte"],
-                "dram_write_pj_per_byte": dram["dram_write_pj_per_byte"],
-                "sram": config["energy"].get("sram", {"source": "fixed"}),
+                "energy_model": energy_config.get("model", "table_based_accelergy"),
+                "mac_pj": energy_config["mac_pj"],
+                "sram_read_pj_per_byte": float(sram_read),
+                "sram_write_pj_per_byte": float(sram_write),
+                "dram_read_pj_per_byte": float(dram_read),
+                "dram_write_pj_per_byte": float(dram_write),
                 "components": ACCELERGY_COMPONENTS,
                 "component_actions": COMPONENT_ACTIONS,
             },

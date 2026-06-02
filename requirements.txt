@@ -4,3 +4,4 @@ matplotlib>=3.8
 PyYAML>=6.0
 scalesim==3.0.0
 pytest>=8.0
+git+https://github.com/Accelergy-Project/accelergy.git@6911d15686ee7efdceba7d95605102df4472ae3a#egg=accelergy
