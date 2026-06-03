@@ -4,6 +4,7 @@ import hashlib
 import fcntl
 import json
 import os
+import shutil
 from dataclasses import asdict, dataclass
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from itertools import product
@@ -182,6 +183,16 @@ def skip_reason(spec: RunSpec) -> str | None:
             "11x11 Gaussian full 128x128 tiles on 128x128 arrays; this case is "
             "severely underutilized and excluded from simulator execution."
         )
+    if (
+        spec.dataflow == "is"
+        and spec.tile_out_width >= 128
+        and (spec.gaussian_kernel >= 11 or (spec.gaussian_kernel >= 7 and spec.array_size >= 32))
+    ):
+        return (
+            "SCALE-Sim input-stationary demand generation is pathological for "
+            "large-kernel 128-wide tiles in this GEMM-lowered workload; "
+            "the demand matrices grow excessively and this case is excluded from simulator execution."
+        )
     return None
 
 
@@ -253,7 +264,13 @@ def report_dir_for_run(run_dir: Path, run_name: str) -> Path:
     return run_dir / "scalesim" / run_name
 
 
-def run_scalesim_spec(spec: RunSpec, config: dict, raw_dir: str | Path, force: bool = False) -> Path:
+def run_scalesim_spec(
+    spec: RunSpec,
+    config: dict,
+    raw_dir: str | Path,
+    force: bool = False,
+    ignore_resource_guard: bool = False,
+) -> Path:
     raw_path = Path(raw_dir)
     raw_path.mkdir(parents=True, exist_ok=True)
     stages = pipeline_stages(spec.tile, spec.gaussian_kernel)
@@ -286,13 +303,16 @@ def run_scalesim_spec(spec: RunSpec, config: dict, raw_dir: str | Path, force: b
     (run_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     _append_alias(run_dir, metadata)
 
-    reason = skip_reason(spec)
+    reason = None if ignore_resource_guard else skip_reason(spec)
     if reason is not None:
         (run_dir / "SKIPPED.json").write_text(
             json.dumps({"reason": reason, "metadata": metadata}, indent=2),
             encoding="utf-8",
         )
         return run_dir
+
+    if force and (run_dir / "scalesim").exists():
+        shutil.rmtree(run_dir / "scalesim")
 
     topology_path = run_dir / "topology.csv"
     layout_path = run_dir / "layout.csv"
@@ -321,6 +341,7 @@ def run_scalesim_spec(spec: RunSpec, config: dict, raw_dir: str | Path, force: b
 
     if not reports_exist(report_dir):
         raise RuntimeError(f"SCALE-Sim completed without expected reports in {report_dir}")
+    (run_dir / "SKIPPED.json").unlink(missing_ok=True)
     return run_dir
 
 

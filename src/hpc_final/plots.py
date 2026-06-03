@@ -6,6 +6,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import pandas as pd
 
 
@@ -59,12 +60,137 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
     _save(fig, path)
     generated.append(path)
 
-    fig, ax = plt.subplots(figsize=(7, 5))
-    ax.scatter(pipeline["latency_ms"], pipeline["energy_total_mj"], c=pipeline["array_size"], cmap="viridis", alpha=0.75)
-    ax.set_xlabel("Latency per frame (ms)")
-    ax.set_ylabel("Energy per frame (mJ)")
-    ax.set_title("Energy-delay design space")
-    ax.grid(True, alpha=0.3)
+    deadline_ms = 33.0
+    dataflow_colors = {"ws": "#4C78A8", "os": "#F58518", "is": "#54A24B"}
+    dataflow_labels = {
+        "ws": "Weight-stationary",
+        "os": "Output-stationary",
+        "is": "Input-stationary",
+    }
+    resolution_markers = {"720p": "o", "1080p": "s", "hires": "^"}
+    observed_dataflows = set(pipeline["dataflow"])
+    observed_resolutions = set(pipeline["resolution"])
+
+    winner_path = summary_path / "minimum_energy_designs.csv"
+    winners = pd.DataFrame()
+    if winner_path.exists():
+        winners = pd.read_csv(winner_path)
+        if "deadline_ms" in winners.columns:
+            winners = winners[winners["deadline_ms"].round(6) == deadline_ms]
+        winners = winners.drop_duplicates(
+            subset=[
+                "resolution",
+                "gaussian_kernel",
+                "array_size",
+                "sram_budget_kb",
+                "bandwidth_gbps",
+                "dataflow",
+                "latency_ms",
+                "energy_total_mj",
+            ]
+        )
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    for ax in axes:
+        for (dataflow, resolution), group in pipeline.groupby(["dataflow", "resolution"]):
+            ax.scatter(
+                group["latency_ms"],
+                group["energy_total_mj"],
+                color=dataflow_colors.get(dataflow, "0.45"),
+                marker=resolution_markers.get(resolution, "o"),
+                s=20,
+                alpha=0.45,
+                linewidths=0,
+                rasterized=True,
+            )
+        ax.axvspan(0, deadline_ms, color="#54A24B", alpha=0.07)
+        ax.axvline(deadline_ms, color="#D62728", linestyle="--", linewidth=1.6)
+        if not winners.empty:
+            ax.scatter(
+                winners["latency_ms"],
+                winners["energy_total_mj"],
+                color="black",
+                edgecolors="white",
+                linewidths=0.6,
+                marker="*",
+                s=140,
+                zorder=5,
+            )
+        ax.set_xlabel("Latency per frame at 1 GHz (ms)")
+        ax.grid(True, alpha=0.3)
+
+    axes[0].set_title("Full sweep")
+    axes[0].set_xlim(left=0)
+    axes[0].set_ylabel("Energy per frame (mJ)")
+    axes[1].set_title("0-40 ms deadline zoom")
+    axes[1].set_xlim(0, 40)
+    axes[1].text(
+        0.03,
+        0.96,
+        "green region = <=33 ms (30 FPS)",
+        transform=axes[1].transAxes,
+        ha="left",
+        va="top",
+        fontsize=8,
+        color="#8C1D18",
+        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 2},
+    )
+    if not winners.empty:
+        label_offsets = {3: (6, -12), 5: (6, 6), 7: (6, 6), 11: (6, 6)}
+        for _, row in winners[winners["resolution"].eq("1080p")].iterrows():
+            kernel = int(row["gaussian_kernel"])
+            axes[1].annotate(
+                f"k={kernel} {str(row['dataflow']).upper()}",
+                (row["latency_ms"], row["energy_total_mj"]),
+                xytext=label_offsets.get(kernel, (6, 6)),
+                textcoords="offset points",
+                fontsize=7,
+                arrowprops={"arrowstyle": "-", "lw": 0.5, "color": "0.25"},
+            )
+
+    legend_handles = [
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="none",
+            markerfacecolor=color,
+            markeredgecolor="none",
+            label=label,
+            markersize=7,
+        )
+        for key, label in dataflow_labels.items()
+        if key in observed_dataflows
+        for color in [dataflow_colors[key]]
+    ]
+    legend_handles.extend(
+        Line2D(
+            [0],
+            [0],
+            marker=marker,
+            color="0.35",
+            linestyle="none",
+            label=resolution,
+            markersize=7,
+        )
+        for resolution, marker in resolution_markers.items()
+        if resolution in observed_resolutions
+    )
+    legend_handles.append(Line2D([0], [0], color="#D62728", linestyle="--", label="33 ms deadline"))
+    if not winners.empty:
+        legend_handles.append(
+            Line2D(
+                [0],
+                [0],
+                marker="*",
+                color="black",
+                linestyle="none",
+                label="Min-energy feasible",
+                markersize=10,
+            )
+        )
+    axes[0].legend(handles=legend_handles, fontsize=7, loc="upper right", frameon=True)
+    fig.suptitle("Energy-delay design space")
     path = figures_path / "energy_latency_scatter.png"
     _save(fig, path)
     generated.append(path)

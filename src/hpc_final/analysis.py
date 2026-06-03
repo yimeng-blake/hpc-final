@@ -6,8 +6,13 @@ from typing import Any
 
 import pandas as pd
 
-from .accelergy_backend import write_accelergy_reference_files
-from .energy import energy_breakdown_from_access_counts_pj
+from .accelergy_backend import (
+    BRANCH_COMPONENT_ACTIONS,
+    BRANCH_COMPONENTS,
+    generate_accelergy_plugin_energy_params,
+    write_accelergy_plugin_backend_summary,
+)
+from .energy import energy_breakdown_from_component_action_energy_pj
 from .parser import parse_reports, reports_exist
 
 
@@ -29,26 +34,37 @@ def _num(value: Any) -> float:
     return float(value)
 
 
-def _energy_params(config: dict) -> dict[str, float | str]:
-    energy_config = config["energy"]
-    sram_read = energy_config.get("sram_read_pj_per_byte", energy_config.get("sram_pj_per_byte"))
-    sram_write = energy_config.get("sram_write_pj_per_byte", energy_config.get("sram_pj_per_byte"))
-    dram_read = energy_config.get("dram_read_pj_per_byte", energy_config.get("dram_pj_per_byte"))
-    dram_write = energy_config.get("dram_write_pj_per_byte", energy_config.get("dram_pj_per_byte"))
-    if sram_read is None or sram_write is None:
-        raise KeyError("SRAM energy requires sram_pj_per_byte or separate sram_read/write_pj_per_byte values")
-    if dram_read is None or dram_write is None:
-        raise KeyError("DRAM energy requires dram_pj_per_byte or separate dram_read/write_pj_per_byte values")
-    return {
-        "energy_model": energy_config.get("model", "table_based_accelergy"),
-        "sram_read_pj_per_byte": float(sram_read),
-        "sram_write_pj_per_byte": float(sram_write),
-        "dram_read_pj_per_byte": float(dram_read),
-        "dram_write_pj_per_byte": float(dram_write),
-    }
+def _energy_param_resolver(
+    config: dict,
+    energy_backend: str,
+    out_dir: Path,
+) -> tuple[Any, dict[tuple[int, int, int], dict[str, float | str]]]:
+    if energy_backend != "accelergy_plugin":
+        raise ValueError(f"Unsupported energy backend for summary generation: {energy_backend}")
+
+    generated: dict[tuple[int, int, int], dict[str, float | str]] = {}
+
+    def resolve(metadata: dict) -> dict[str, float | str]:
+        key = (int(metadata["array_size"]), int(metadata["sram_budget_kb"]), int(metadata["word_bytes"]))
+        if key not in generated:
+            generated[key] = generate_accelergy_plugin_energy_params(
+                config,
+                out_dir,
+                array_size=key[0],
+                sram_budget_kb=key[1],
+                word_bytes=key[2],
+            )
+        return generated[key]
+
+    return resolve, generated
 
 
-def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> list[dict]:
+def _stage_records_for_run(
+    run_dir: Path,
+    config: dict,
+    energy_backend: str,
+    energy_params_for: Any,
+) -> list[dict]:
     metadata_path = run_dir / "metadata.json"
     if not metadata_path.exists():
         return []
@@ -65,8 +81,8 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
     else:
         metadata_items = [base_metadata]
 
-    energy_params = _energy_params(config)
     for metadata in metadata_items:
+        energy_params = energy_params_for(metadata)
         stage_meta = {stage["name"]: stage for stage in metadata["stages"]}
         for record in parsed:
             stage = stage_meta[record["stage"]]
@@ -95,7 +111,7 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
             scaled_cycles = cycles * tile_count
             scaled_stalls = stall_cycles * tile_count
 
-            energy = energy_breakdown_from_access_counts_pj(
+            energy = energy_breakdown_from_component_action_energy_pj(
                 macs=scaled_macs,
                 sram_ifmap_reads=scaled_sram_ifmap_reads,
                 sram_filter_reads=scaled_sram_filter_reads,
@@ -103,13 +119,13 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
                 dram_ifmap_reads=scaled_dram_ifmap_reads,
                 dram_filter_reads=scaled_dram_filter_reads,
                 dram_ofmap_writes=scaled_dram_ofmap_writes,
-                word_bytes=metadata["word_bytes"],
-                mac_pj=config["energy"]["mac_pj"],
-                sram_read_pj_per_byte=energy_params["sram_read_pj_per_byte"],
-                sram_write_pj_per_byte=energy_params["sram_write_pj_per_byte"],
-                dram_read_pj_per_byte=energy_params["dram_read_pj_per_byte"],
-                dram_write_pj_per_byte=energy_params["dram_write_pj_per_byte"],
-                backend=energy_backend,
+                mac_pj_per_action=energy_params["mac_pj"],
+                sram_ifmap_read_pj_per_action=energy_params["sram_ifmap_read_pj_per_action"],
+                sram_filter_read_pj_per_action=energy_params["sram_filter_read_pj_per_action"],
+                sram_ofmap_write_pj_per_action=energy_params["sram_ofmap_write_pj_per_action"],
+                dram_ifmap_read_pj_per_action=energy_params["dram_ifmap_read_pj_per_action"],
+                dram_filter_read_pj_per_action=energy_params["dram_filter_read_pj_per_action"],
+                dram_ofmap_write_pj_per_action=energy_params["dram_ofmap_write_pj_per_action"],
             )
 
             records.append(
@@ -156,11 +172,18 @@ def _stage_records_for_run(run_dir: Path, config: dict, energy_backend: str) -> 
     return records
 
 
-def load_stage_records(raw_dir: str | Path, config: dict, energy_backend: str = "analytical") -> pd.DataFrame:
+def load_stage_records(
+    raw_dir: str | Path,
+    config: dict,
+    energy_backend: str = "accelergy_plugin",
+    energy_params_for: Any | None = None,
+) -> pd.DataFrame:
     raw_path = Path(raw_dir)
+    if energy_params_for is None:
+        energy_params_for, _ = _energy_param_resolver(config, energy_backend, Path.cwd())
     records: list[dict] = []
     for metadata in sorted(raw_path.glob("run_*/metadata.json")):
-        records.extend(_stage_records_for_run(metadata.parent, config, energy_backend))
+        records.extend(_stage_records_for_run(metadata.parent, config, energy_backend, energy_params_for))
     return pd.DataFrame.from_records(records)
 
 
@@ -320,24 +343,29 @@ def bottleneck_summary(stage_df: pd.DataFrame) -> pd.DataFrame:
     return merged.sort_values(GROUP_COLS + ["stage_op"]).reset_index(drop=True)
 
 
-def accelergy_action_counts_table(stage_df: pd.DataFrame) -> pd.DataFrame:
+def accelergy_action_counts_table(stage_df: pd.DataFrame, energy_backend: str = "accelergy_plugin") -> pd.DataFrame:
     if stage_df.empty:
         return pd.DataFrame()
+    if energy_backend != "accelergy_plugin":
+        raise ValueError(f"Unsupported Accelergy action-count backend: {energy_backend}")
 
     component_specs = [
-        ("accelerator.mac_array", "mac", "scaled_macs"),
-        ("accelerator.ifmap_sram", "read", "scaled_sram_ifmap_reads"),
-        ("accelerator.filter_sram", "read", "scaled_sram_filter_reads"),
-        ("accelerator.ofmap_sram", "write", "scaled_sram_ofmap_writes"),
-        ("accelerator.ifmap_dram", "read", "scaled_dram_ifmap_reads"),
-        ("accelerator.filter_dram", "read", "scaled_dram_filter_reads"),
-        ("accelerator.ofmap_dram", "write", "scaled_dram_ofmap_writes"),
+        (BRANCH_COMPONENTS["mac"], BRANCH_COMPONENT_ACTIONS["mac"], "scaled_macs"),
+        (BRANCH_COMPONENTS["sram_ifmap"], BRANCH_COMPONENT_ACTIONS["sram_ifmap"], "scaled_sram_ifmap_reads"),
+        (BRANCH_COMPONENTS["sram_filter"], BRANCH_COMPONENT_ACTIONS["sram_filter"], "scaled_sram_filter_reads"),
+        (BRANCH_COMPONENTS["sram_ofmap"], BRANCH_COMPONENT_ACTIONS["sram_ofmap"], "scaled_sram_ofmap_writes"),
+        (BRANCH_COMPONENTS["dram_ifmap"], BRANCH_COMPONENT_ACTIONS["dram_ifmap"], "scaled_dram_ifmap_reads"),
+        (BRANCH_COMPONENTS["dram_filter"], BRANCH_COMPONENT_ACTIONS["dram_filter"], "scaled_dram_filter_reads"),
+        (BRANCH_COMPONENTS["dram_ofmap"], BRANCH_COMPONENT_ACTIONS["dram_ofmap"], "scaled_dram_ofmap_writes"),
     ]
     rows: list[dict] = []
     context_cols = GROUP_COLS + ["run_name", "spec_hash", "simulation_hash", "tile_class", "stage", "stage_op"]
     for _, row in stage_df.iterrows():
         base = {col: row[col] for col in context_cols}
         for component, action, count_col in component_specs:
+            if "{pe_range}" in component:
+                pe_range = f"0..{int(row['array_size']) * int(row['array_size']) - 1}"
+                component = component.format(pe_range=pe_range)
             rows.append({**base, "component": component, "action": action, "count": row[count_col]})
     return pd.DataFrame(rows)
 
@@ -348,12 +376,17 @@ def summarize(
     config: dict,
     tile_width: int | None = None,
     tile_height: int | None = None,
-    energy_backend: str = "analytical",
+    energy_backend: str = "accelergy_plugin",
 ) -> dict[str, pd.DataFrame]:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
-    stage_df = filter_stage_records(load_stage_records(raw_dir, config, energy_backend), tile_width, tile_height)
+    energy_params_for, accelergy_plugin_cache = _energy_param_resolver(config, energy_backend, out_path)
+    stage_df = filter_stage_records(
+        load_stage_records(raw_dir, config, energy_backend, energy_params_for),
+        tile_width,
+        tile_height,
+    )
     skipped_df = filter_stage_records(load_skipped_records(raw_dir), tile_width, tile_height)
     stage_df = drop_incomplete_configs(stage_df, skipped_df)
     pipe_df = pipeline_summary(stage_df, config)
@@ -361,7 +394,7 @@ def summarize(
     pareto_df = pareto_frontier(feas_df)
     min_df = minimum_energy_designs(feas_df)
     bottleneck_df = bottleneck_summary(stage_df)
-    accelergy_counts_df = accelergy_action_counts_table(stage_df) if energy_backend == "accelergy" else pd.DataFrame()
+    accelergy_counts_df = accelergy_action_counts_table(stage_df, energy_backend)
 
     outputs = {
         "all_runs": stage_df,
@@ -372,9 +405,8 @@ def summarize(
         "bottleneck_summary": bottleneck_df,
         "skipped_runs": skipped_df,
     }
-    if energy_backend == "accelergy":
-        write_accelergy_reference_files(config, out_path)
-        accelergy_counts_df.to_csv(out_path / "accelergy_action_counts.csv", index=False)
+    write_accelergy_plugin_backend_summary(config, out_path, list(accelergy_plugin_cache.values()))
+    accelergy_counts_df.to_csv(out_path / "accelergy_action_counts.csv", index=False)
     for name, df in outputs.items():
         df.to_csv(out_path / f"{name}.csv", index=False)
     return outputs

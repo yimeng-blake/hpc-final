@@ -1,32 +1,53 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
+import shutil
+
 from _bootstrap import add_project_src_to_path
 
-add_project_src_to_path()
+ROOT = add_project_src_to_path()
 
-from hpc_final.energy import energy_breakdown_from_access_counts_pj
+from hpc_final.accelergy_backend import generate_accelergy_plugin_energy_params
+from hpc_final.config import load_experiment_config
+
+
+def smoke_plugin_backend(keep: bool) -> None:
+    out_dir = ROOT / "outputs" / "smoke_accelergy_plugin"
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    config = load_experiment_config(ROOT / "configs" / "experiment.yaml")
+    params = generate_accelergy_plugin_energy_params(
+        config,
+        out_dir,
+        array_size=32,
+        sram_budget_kb=1024,
+        word_bytes=config["word_bytes"],
+    )
+    required = [
+        "mac_pj",
+        "sram_ifmap_read_pj_per_action",
+        "sram_filter_read_pj_per_action",
+        "sram_ofmap_write_pj_per_action",
+        "dram_ifmap_read_pj_per_action",
+        "dram_filter_read_pj_per_action",
+        "dram_ofmap_write_pj_per_action",
+    ]
+    for key in required:
+        if float(params[key]) <= 0:
+            raise RuntimeError(f"Expected positive generated action energy for {key}, got {params[key]}")
+    if not keep:
+        shutil.rmtree(out_dir, ignore_errors=True)
+        print("Accelergy plugin smoke test passed: generated and validated an Accelergy table-plug-in ERT")
+    else:
+        print(f"Accelergy plugin smoke test passed: generated ERT at {params['accelergy_ert']}")
 
 
 def main() -> int:
-    result = energy_breakdown_from_access_counts_pj(
-        macs=10,
-        sram_ifmap_reads=8,
-        sram_filter_reads=7,
-        sram_ofmap_writes=5,
-        dram_ifmap_reads=11,
-        dram_filter_reads=13,
-        dram_ofmap_writes=6,
-        word_bytes=1,
-        mac_pj=0.2,
-        sram_pj_per_byte=5.0,
-        dram_pj_per_byte=100.0,
-        backend="accelergy",
-    )
-    expected = 3102.0
-    if abs(result["energy_total_pj"] - expected) > 1e-9:
-        raise RuntimeError(f"Expected {expected} pJ, got {result['energy_total_pj']} pJ")
-    print("Accelergy smoke test passed: ERT/action-count energy calculation returned 3102.0 pJ")
+    parser = argparse.ArgumentParser(description="Validate Accelergy table-plug-in ERT generation.")
+    parser.add_argument("--keep", action="store_true", help="Keep generated smoke output.")
+    args = parser.parse_args()
+    smoke_plugin_backend(args.keep)
     return 0
 
 
