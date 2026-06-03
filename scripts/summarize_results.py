@@ -16,15 +16,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Aggregate SCALE-Sim raw outputs and generate plots.")
     parser.add_argument("--config", default=str(ROOT / "configs" / "experiment.yaml"))
     parser.add_argument("--results", default=str(ROOT / "outputs" / "raw"))
-    parser.add_argument("--out", default=str(ROOT / "outputs" / "summary"))
-    parser.add_argument("--figures", default=str(ROOT / "figures"))
+    parser.add_argument("--out", default=str(ROOT / "outputs" / "summary_accelergy_plugin"))
+    parser.add_argument("--figures", default=str(ROOT / "figures_accelergy_plugin"))
     parser.add_argument("--tile-width", type=int, default=None, help="Only summarize runs with this output tile width.")
     parser.add_argument("--tile-height", type=int, default=None, help="Only summarize runs with this output tile height.")
     parser.add_argument(
         "--energy-backend",
-        choices=["analytical", "accelergy"],
-        default="analytical",
-        help="Energy calculation backend. Accelergy reuses SCALE-Sim action counts through an Accelergy ERT.",
+        choices=["accelergy_plugin"],
+        default="accelergy_plugin",
+        help=(
+            "Energy calculation backend. The Accelergy plug-in backend generates the ERT "
+            "with Accelergy CLI component libraries/table plug-ins."
+        ),
     )
     args = parser.parse_args()
 

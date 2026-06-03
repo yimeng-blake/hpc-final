@@ -1,0 +1,14 @@
+
+#===================================================================================#
+#=========================== Running Accelergy =====================================#
+#===================================================================================#
+
+Info: config file located: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_1024_word_1/home/.config/accelergy/accelergy_config.yaml 
+config file content: 
+ {'version': 0.3, 'estimator_plug_ins': ['/Users/yimengwang/Desktop/Development/hpc-assignment-2/.venv/share/accelergy/estimation_plug_ins'], 'primitive_components': ['/Users/yimengwang/Desktop/Development/hpc-assignment-2/.venv/share/accelergy/primitive_component_libs'], 'table_plug_ins': {'roots': ['/Users/yimengwang/Desktop/Development/hpc-assignment-2/.venv/share/accelergy/estimation_plug_ins/accelergy-table-based-plug-ins/set_of_table_templates']}}
+Info: primitive component file parsed:  /Users/yimengwang/Desktop/Development/hpc-assignment-2/.venv/share/accelergy/primitive_component_libs/primitive_component.lib.yaml 
+Info: estimator plug-in identified by:  /Users/yimengwang/Desktop/Development/hpc-assignment-2/.venv/share/accelergy/estimation_plug_ins/dummy_tables/dummy.estimator.yaml 
+Info: estimator plug-in identified by:  /Users/yimengwang/Desktop/Development/hpc-assignment-2/.venv/share/accelergy/estimation_plug_ins/accelergy-table-based-plug-ins/table.estimator.yaml 
+table-based-plug-ins Identifies a set of tables named:  test_tables
+Info: energy reference table is saved to: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_1024_word_1/outputs/ERT.yaml 
+Info: energy estimations are saved to: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_1024_word_1/outputs/energy_estimation.yaml 

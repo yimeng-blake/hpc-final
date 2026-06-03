@@ -1,0 +1,174 @@
+run_name,status,seconds,resolution,gaussian_kernel,array_size,sram_budget_kb,bandwidth_gbps,dataflow,tile_class,stdout_tail,stderr_tail,max_rss_gb
+run_0afe1c17ac94,rss_limit,19.241,720p,11,32,256,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.097
+run_103925a352b4,completed,14.124,720p,11,64,4096,50.0,is,full,completed run_103925a352b4,,3.207
+run_11914da1d756,completed,6.070,1080p,11,64,4096,200.0,is,bottom_edge,completed run_11914da1d756,,1.358
+run_12ac03da7ffd,rss_limit,50.505,720p,11,16,256,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.306
+run_14b02c2dba08,rss_limit,23.247,720p,11,32,1024,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.326
+run_189dfdf1c140,completed,25.230,1080p,11,8,4096,800.0,is,bottom_edge,completed run_189dfdf1c140,,1.620
+run_1b5079e929c0,completed,9.087,1080p,11,32,1024,50.0,is,bottom_edge,completed run_1b5079e929c0,,1.952
+run_207f74a604ef,completed,4.047,1080p,7,32,4096,800.0,is,bottom_edge,completed run_207f74a604ef,,0.763
+run_224d63f60b04,rss_limit,11.156,720p,11,64,1024,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.231
+run_2368c451571e,completed,3.038,1080p,7,64,1024,200.0,is,bottom_edge,completed run_2368c451571e,,0.692
+run_2376f032cc62,rss_limit,8.145,1080p,11,32,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.958
+run_27df94e4058c,completed,5.043,1080p,11,128,1024,800.0,is,bottom_edge,completed run_27df94e4058c,,1.877
+run_290db3aaba6b,rss_limit,5.121,1080p,11,64,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.723
+run_2944a9341d00,completed,65.563,720p,11,16,4096,800.0,is,full,completed run_2944a9341d00,,3.356
+run_29bce550aa09,rss_limit,21.240,1080p,11,8,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.229
+run_2a22baab4558,rss_limit,22.259,1080p,11,8,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.770
+run_2a6ec000b3c8,rss_limit,4.105,720p,11,128,256,200.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.322
+run_2ad88446fe25,completed,8.077,1080p,11,32,4096,800.0,is,bottom_edge,completed run_2ad88446fe25,,1.522
+run_2c8f84abd893,rss_limit,57.550,720p,11,16,1024,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.279
+run_2e0ec328cf4c,rss_limit,24.269,720p,11,32,1024,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.433
+run_317992c5d8b8,completed,3.034,1080p,7,64,1024,800.0,is,bottom_edge,completed run_317992c5d8b8,,0.691
+run_31f3ff7a26f3,completed,9.094,720p,11,128,4096,200.0,is,full,completed run_31f3ff7a26f3,,2.014
+run_330b83e9cd52,rss_limit,7.125,720p,11,128,1024,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.220
+run_37be82ad851e,completed,97.830,720p,11,8,4096,800.0,is,full,completed run_37be82ad851e,,3.253
+run_39288dfaf56a,rss_limit,17.200,720p,11,32,256,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.462
+run_39baf7c5002d,rss_limit,7.128,1080p,11,32,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.253
+run_3ac3ce362e78,rss_limit,47.472,720p,11,16,256,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.803
+run_3bbe85c39bae,completed,5.044,1080p,11,64,4096,50.0,is,bottom_edge,completed run_3bbe85c39bae,,1.361
+run_415786f31914,completed,3.043,1080p,7,128,256,50.0,is,bottom_edge,completed run_415786f31914,,0.932
+run_424f388382ed,rss_limit,72.701,720p,11,8,256,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.184
+run_45213a459c6e,rss_limit,22.248,720p,11,32,1024,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.060
+run_46da725165d8,completed,16.157,1080p,11,16,4096,800.0,is,bottom_edge,completed run_46da725165d8,,1.604
+run_4792e788e260,completed,8.090,1080p,11,32,4096,200.0,is,bottom_edge,completed run_4792e788e260,,1.525
+run_48141a07bb4e,completed,5.052,1080p,11,64,1024,800.0,is,bottom_edge,completed run_48141a07bb4e,,2.055
+run_488b503565b5,rss_limit,4.109,1080p,11,128,256,200.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.522
+run_499a806c0075,completed,9.089,720p,11,128,4096,50.0,is,full,completed run_499a806c0075,,2.020
+run_4a73a70893c8,rss_limit,7.113,720p,11,128,1024,200.0,os,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.222
+run_4e6090edfe2f,rss_limit,12.175,1080p,11,16,256,200.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.688
+run_50c7829aefb5,completed,6.053,1080p,11,64,4096,800.0,is,bottom_edge,completed run_50c7829aefb5,,1.369
+run_587570fb9faf,rss_limit,18.220,720p,11,32,256,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.198
+run_59cfa27c7c7e,completed,25.235,1080p,11,8,4096,50.0,is,bottom_edge,completed run_59cfa27c7c7e,,1.619
+run_5b2da5b69c68,rss_limit,4.095,1080p,7,32,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.501
+run_5cdbeaed6c83,rss_limit,7.127,720p,11,64,256,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.281
+run_5d944e2ef10e,completed,4.044,1080p,7,32,1024,200.0,is,bottom_edge,completed run_5d944e2ef10e,,0.768
+run_5ded5fd7e601,rss_limit,7.129,720p,11,64,256,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.288
+run_6208987f5697,completed,100.861,720p,11,8,1024,200.0,is,full,completed run_6208987f5697,,7.601
+run_629f79be1206,completed,4.052,1080p,11,128,4096,200.0,is,bottom_edge,completed run_629f79be1206,,0.963
+run_62b1ee9b0752,completed,3.036,1080p,7,128,1024,800.0,is,bottom_edge,completed run_62b1ee9b0752,,0.905
+run_63b9f4f9264f,completed,4.049,1080p,7,32,1024,800.0,is,bottom_edge,completed run_63b9f4f9264f,,0.766
+run_67d4a8cb9185,completed,3.046,1080p,7,64,256,200.0,is,bottom_edge,completed run_67d4a8cb9185,,0.886
+run_6ad2504723f2,completed,3.043,1080p,7,128,1024,200.0,is,bottom_edge,completed run_6ad2504723f2,,0.905
+run_6c475b49286b,rss_limit,5.115,1080p,11,64,256,200.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.479
+run_6e7039b2a937,rss_limit,13.173,1080p,11,16,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.037
+run_6fdc60fb0f0f,completed,26.236,720p,11,32,4096,200.0,is,full,completed run_6fdc60fb0f0f,,3.371
+run_74ffaaecb0e0,completed,3.045,1080p,7,128,4096,50.0,is,bottom_edge,completed run_74ffaaecb0e0,,0.909
+run_7681d477ba8d,completed,3.044,1080p,7,64,4096,50.0,is,bottom_edge,completed run_7681d477ba8d,,0.699
+run_7773800010d5,completed,5.054,1080p,11,64,1024,200.0,is,bottom_edge,completed run_7773800010d5,,2.048
+run_7bca79816eaa,completed,3.041,1080p,7,64,4096,800.0,is,bottom_edge,completed run_7bca79816eaa,,0.696
+run_7d3928b9f88d,completed,3.034,1080p,7,64,256,800.0,is,bottom_edge,completed run_7d3928b9f88d,,0.886
+run_7ff2a113d2db,completed,3.034,1080p,7,128,256,200.0,is,bottom_edge,completed run_7ff2a113d2db,,0.938
+run_807b64589559,rss_limit,7.122,720p,11,128,1024,800.0,os,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.215
+run_8a7b4448becc,rss_limit,4.095,720p,11,128,256,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.665
+run_8a97d2129dd7,completed,4.053,1080p,7,32,4096,200.0,is,bottom_edge,completed run_8a97d2129dd7,,0.764
+run_8ac8e8251971,completed,15.147,1080p,11,16,4096,200.0,is,bottom_edge,completed run_8ac8e8251971,,1.612
+run_8b19d1df8303,completed,8.091,1080p,11,32,1024,200.0,is,bottom_edge,completed run_8b19d1df8303,,1.713
+run_8d8f0165d1c3,completed,3.044,1080p,7,128,256,800.0,is,bottom_edge,completed run_8d8f0165d1c3,,0.930
+run_8eabafc6c328,completed,4.052,1080p,7,32,1024,50.0,is,bottom_edge,completed run_8eabafc6c328,,0.766
+run_8f23e0a81920,rss_limit,4.098,1080p,7,32,256,200.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.291
+run_9179f74a2276,rss_limit,3.082,720p,11,128,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.094
+run_9217f95e6a84,completed,9.095,720p,11,128,4096,800.0,is,full,completed run_9217f95e6a84,,2.014
+run_96e7ffc12a74,rss_limit,4.098,720p,11,128,256,200.0,os,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.059
+run_97ff86f3b2a8,completed,26.238,1080p,11,8,1024,800.0,is,bottom_edge,completed run_97ff86f3b2a8,,2.025
+run_9c493ef1b7bc,completed,15.148,1080p,11,16,1024,50.0,is,bottom_edge,completed run_9c493ef1b7bc,,2.010
+run_9eaee686cb04,rss_limit,12.170,1080p,11,16,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.464
+run_9f08e603246d,completed,3.044,1080p,7,128,4096,800.0,is,bottom_edge,completed run_9f08e603246d,,0.909
+run_9fef47b1f65d,rss_limit,4.101,720p,11,128,256,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.014
+run_a43cca31b838,completed,4.048,1080p,7,32,4096,50.0,is,bottom_edge,completed run_a43cca31b838,,0.773
+run_a452fb3b1746,completed,24.225,720p,11,32,4096,50.0,is,full,completed run_a452fb3b1746,,3.371
+run_aa27ecffd63f,completed,3.031,1080p,7,64,256,50.0,is,bottom_edge,completed run_aa27ecffd63f,,0.890
+run_ab13793307d7,completed,13.127,720p,11,64,4096,800.0,is,full,completed run_ab13793307d7,,3.339
+run_b2924456aef5,completed,5.062,1080p,11,128,1024,50.0,is,bottom_edge,completed run_b2924456aef5,,1.886
+run_b3a5d60b6427,completed,8.082,1080p,11,32,4096,50.0,is,bottom_edge,completed run_b3a5d60b6427,,1.521
+run_b6bda5dc9693,rss_limit,5.112,720p,11,128,256,800.0,os,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.649
+run_b6e6131271b1,completed,8.082,720p,11,128,4096,800.0,os,full,completed run_b6e6131271b1,,1.832
+run_b746242530c7,completed,26.250,720p,11,32,4096,800.0,is,full,completed run_b746242530c7,,3.372
+run_bb3d3787962e,rss_limit,7.120,720p,11,128,1024,50.0,os,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.343
+run_bb64521d7fd5,rss_limit,11.166,720p,11,64,1024,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.095
+run_be9dbc160739,rss_limit,7.123,720p,11,128,1024,50.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.385
+run_beaabf89b684,rss_limit,5.112,1080p,11,64,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.404
+run_c358b3e20898,completed,3.034,1080p,7,128,4096,200.0,is,bottom_edge,completed run_c358b3e20898,,0.909
+run_c7eac60cfea1,rss_limit,5.121,720p,11,128,256,50.0,os,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.551
+run_ca0a050cb5af,completed,3.038,1080p,7,64,1024,50.0,is,bottom_edge,completed run_ca0a050cb5af,,0.693
+run_ca56b0ed5c81,rss_limit,75.727,720p,11,8,256,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.333
+run_cd589d29d9e1,rss_limit,74.715,720p,11,8,256,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.275
+run_cd6789b16aa5,rss_limit,4.101,1080p,11,128,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.243
+run_ce4004d9b615,rss_limit,7.120,720p,11,64,256,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.121
+run_cee60e2abcde,completed,100.901,720p,11,8,1024,800.0,is,full,completed run_cee60e2abcde,,7.567
+run_cefa2fb3b08b,rss_limit,4.100,720p,11,128,256,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.699
+run_d0c953cf487d,completed,8.075,720p,11,128,4096,50.0,os,full,completed run_d0c953cf487d,,1.837
+run_d350b3db2f90,completed,4.054,1080p,11,128,4096,50.0,is,bottom_edge,completed run_d350b3db2f90,,0.991
+run_d5a41a458f19,completed,97.874,720p,11,8,4096,200.0,is,full,completed run_d5a41a458f19,,3.125
+run_d83e5376c8f6,completed,26.244,1080p,11,8,4096,200.0,is,bottom_edge,completed run_d83e5376c8f6,,1.597
+run_e226a4453a43,completed,4.052,1080p,11,128,4096,800.0,is,bottom_edge,completed run_e226a4453a43,,0.970
+run_e260050b609a,completed,8.091,1080p,11,32,1024,800.0,is,bottom_edge,completed run_e260050b609a,,1.764
+run_e32f559482a3,completed,15.144,1080p,11,16,4096,50.0,is,bottom_edge,completed run_e32f559482a3,,1.599
+run_e49f793f11b3,completed,3.046,1080p,7,64,4096,200.0,is,bottom_edge,completed run_e49f793f11b3,,0.702
+run_e4e4e2939313,rss_limit,56.571,720p,11,16,1024,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.110
+run_e58910a9f57f,completed,16.145,1080p,11,16,1024,800.0,is,bottom_edge,completed run_e58910a9f57f,,2.005
+run_e59c030d1095,completed,64.572,720p,11,16,4096,50.0,is,full,completed run_e59c030d1095,,3.363
+run_e69d07b311bc,rss_limit,4.116,1080p,11,128,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.554
+run_e7bca15d2987,rss_limit,51.516,720p,11,16,256,800.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.422
+run_ed9cdb6ae61e,rss_limit,7.123,720p,11,128,1024,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.224
+run_f0e2c8fc865e,rss_limit,23.277,1080p,11,8,256,200.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.840
+run_f325f73d0b94,completed,15.146,720p,11,64,4096,200.0,is,full,completed run_f325f73d0b94,,3.206
+run_f525cbae681a,completed,5.055,1080p,11,128,1024,200.0,is,bottom_edge,completed run_f525cbae681a,,1.879
+run_f689e76a358d,completed,16.180,1080p,11,16,1024,200.0,is,bottom_edge,completed run_f689e76a358d,,1.858
+run_f7420172b6c6,rss_limit,4.118,1080p,7,32,256,800.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",9.689
+run_f90ee06d4a14,completed,8.128,720p,11,128,4096,200.0,os,full,completed run_f90ee06d4a14,,1.838
+run_fa80b307a3c4,rss_limit,3.102,720p,11,128,256,50.0,is,bottom_edge,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.330
+run_fcf705c03a7e,rss_limit,51.672,720p,11,16,1024,200.0,is,full,,"/Users/yimengwang/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '",8.372
+run_fe238b00b982,completed,3.052,1080p,7,128,1024,50.0,is,bottom_edge,completed run_fe238b00b982,,0.914

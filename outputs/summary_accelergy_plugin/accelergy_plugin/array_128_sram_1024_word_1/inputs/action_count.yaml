@@ -1,0 +1,40 @@
+action_counts:
+  version: 0.3
+  local:
+  - name: systolic_array.PE[0..16383].mac
+    action_counts:
+    - name: mac_random
+      counts: 1
+  - name: systolic_array.ifmap_glb
+    action_counts:
+    - name: read
+      arguments:
+        address_delta: 1
+        data_delta: 1
+      counts: 1
+  - name: systolic_array.weights_glb
+    action_counts:
+    - name: read
+      arguments:
+        address_delta: 1
+        data_delta: 1
+      counts: 1
+  - name: systolic_array.psum_glb
+    action_counts:
+    - name: update
+      arguments:
+        address_delta: 1
+        data_delta: 1
+      counts: 1
+  - name: systolic_array.ifmap_dram
+    action_counts:
+    - name: read
+      counts: 1
+  - name: systolic_array.weights_dram
+    action_counts:
+    - name: read
+      counts: 1
+  - name: systolic_array.psum_dram
+    action_counts:
+    - name: write
+      counts: 1

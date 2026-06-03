@@ -9,11 +9,11 @@ The goal is to find the **minimum-energy systolic array configuration** that can
 The final experiment uses:
 
 - **SCALE-Sim** for systolic-array performance simulation.
-- **Accelergy** for table-based ERT/action-count energy calculation.
+- **Accelergy** for action-count energy calculation through the component-library/table-plug-in path.
 - **Tiled full-frame scaling** to keep the experiment tractable.
 - **Deadline-constrained design selection** to choose energy-efficient feasible hardware.
 
-This version follows the same general direction as the class SCALE-Sim + Accelergy assignments: simulate accelerator performance, convert the simulator results into action counts, apply an Accelergy Energy Reference Table, and report latency, energy, and EDP. CACTI is not part of the active pipeline.
+This version follows the same general direction as the class SCALE-Sim + Accelergy assignments: simulate accelerator performance, convert the simulator results into action counts, let Accelergy provide an Energy Reference Table, and report latency, energy, and EDP. CACTI is not part of the active pipeline.
 
 ## Problem Statement
 
@@ -139,8 +139,8 @@ The final modeling pipeline is:
 3. Parse cycles, stalls, utilization, and detailed memory accesses.
 4. Scale tile-level metrics to full-frame metrics.
 5. Convert SCALE-Sim memory and compute counts into Accelergy action counts.
-6. Generate a table-based Accelergy Energy Reference Table.
-7. Use Accelergy to calculate per-component and total energy.
+6. Generate a table-based Accelergy Energy Reference Table through the component-library/table-plug-in path.
+7. Use Accelergy-derived per-action costs to calculate per-component and total energy.
 8. Aggregate latency, energy, power, EDP, feasibility, bottlenecks, and Pareto fronts.
 
 SCALE-Sim provides the performance side:
@@ -155,33 +155,37 @@ SCALE-Sim provides the performance side:
 - DRAM filter reads.
 - DRAM OFMAP writes.
 
-Accelergy provides the energy-accounting side. The project maps SCALE-Sim counts into these Accelergy components:
+Accelergy provides the energy-accounting side. The project uses the `accelergy_plugin` backend, which writes architecture/action-count probe YAML, runs the Accelergy CLI with SCALE-Sim-Accelergy component YAMLs and table plug-ins, parses the generated `energy_estimation.yaml`, and applies those generated pJ/action values to the SCALE-Sim counts.
+
+The project maps SCALE-Sim counts into the SCALE-Sim-Accelergy branch's component names:
 
 | SCALE-Sim Count | Accelergy Component | Action |
 | --- | --- | --- |
-| MAC operations | `accelerator.mac_array` | `mac` |
-| SRAM IFMAP reads | `accelerator.ifmap_sram` | `read` |
-| SRAM filter reads | `accelerator.filter_sram` | `read` |
-| SRAM OFMAP writes | `accelerator.ofmap_sram` | `write` |
-| DRAM IFMAP reads | `accelerator.ifmap_dram` | `read` |
-| DRAM filter reads | `accelerator.filter_dram` | `read` |
-| DRAM OFMAP writes | `accelerator.ofmap_dram` | `write` |
+| MAC operations | `systolic_array.PE[0..N].mac` | `mac_random` |
+| SRAM IFMAP reads | `systolic_array.ifmap_glb` | `read` |
+| SRAM filter reads | `systolic_array.weights_glb` | `read` |
+| SRAM OFMAP writes | `systolic_array.psum_glb` | `update` |
+| DRAM IFMAP reads | `systolic_array.ifmap_dram` | `read` |
+| DRAM filter reads | `systolic_array.weights_dram` | `read` |
+| DRAM OFMAP writes | `systolic_array.psum_dram` | `write` |
 
-The ERT values are configured in `configs/experiment.yaml`:
+The `accelergy_plugin` backend auto-detects the sibling assignment installs used in this workspace. If that fails on another machine, configure:
 
-| Action Type | Energy |
-| --- | ---: |
-| 8-bit MAC | 0.23 pJ/action |
-| SRAM byte access | 5.0 pJ/byte |
-| DRAM byte access | 160.0 pJ/byte |
+```yaml
+energy:
+  accelergy_plugin:
+    accelergy_bin: ../hpc-assignment-2/.venv/bin/accelergy
+    component_dir: ../hpc-assignment-1/deps/SCALE-Sim-Accelergy/rundir-accelergy/accelergy_input/components
+```
 
-These values are **assignment-style ERT assumptions**. Accelergy applies them consistently to the action counts, but it does not create technology-specific SRAM or DRAM costs by itself. For this final version, the point is reproducible comparative energy modeling across the design sweep, not silicon-accurate energy prediction.
-
-The generated Accelergy files are saved in `outputs/summary_accelergy/`:
+The generated Accelergy files are saved in the selected summary directory:
 
 - `accelergy_action_counts.csv`
-- `accelergy_ERT.yaml`
 - `accelergy_backend.yaml`
+- `accelergy_plugin/*/inputs/architecture.yaml`
+- `accelergy_plugin/*/inputs/action_count.yaml`
+- `accelergy_plugin/*/outputs/ERT.yaml`
+- `accelergy_plugin/*/outputs/energy_estimation.yaml`
 
 ## Design Space
 
@@ -200,7 +204,7 @@ The sweep covers both workload parameters and hardware parameters.
 | Array sizes | 8x8, 16x16, 32x32, 64x64, 128x128 |
 | SRAM budgets | 256 KB, 1024 KB, 4096 KB |
 | Bandwidths | 50 GB/s, 200 GB/s, 800 GB/s |
-| Dataflows | weight-stationary, output-stationary |
+| Dataflows | weight-stationary, output-stationary, input-stationary |
 | Frequency | 1 GHz |
 | Word size | 1 byte |
 
@@ -209,14 +213,14 @@ The summary also reports `cycles_x_pes`, which matches the class assignment styl
 ## Repository Layout
 
 ```text
-configs/experiment.yaml        Main experiment specification and ERT assumptions.
+configs/experiment.yaml        Main experiment specification and Accelergy plug-in options.
 scripts/run_sweep.py           Runs SCALE-Sim sweeps with caching and resume support.
 scripts/summarize_results.py   Aggregates raw runs and generates CSVs/plots.
 scripts/smoke_test_scalesim.py Validates SCALE-Sim compatibility.
 scripts/smoke_test_accelergy.py Validates Accelergy ERT/action-count accounting.
 src/hpc_final/                 Reusable Python package for modeling and analysis.
-outputs/summary_accelergy/     Final Accelergy-backed summary CSVs and ERT files.
-figures_accelergy/             Final plots generated from Accelergy-backed summaries.
+outputs/summary_accelergy_plugin/ Final Accelergy plug-in-backed summary CSVs and ERT files.
+figures_accelergy_plugin/      Final plots generated from Accelergy plug-in-backed summaries.
 misc/                          Archived non-core artifacts and older explanation files.
 ```
 
@@ -250,7 +254,7 @@ Run the sanity sweep:
 
 ```bash
 .venv/bin/python scripts/run_sweep.py --mode sanity
-.venv/bin/python scripts/summarize_results.py --energy-backend accelergy
+.venv/bin/python scripts/summarize_results.py --energy-backend accelergy_plugin
 ```
 
 Run the full SCALE-Sim sweep:
@@ -265,11 +269,11 @@ Generate final Accelergy-backed summaries and figures:
 .venv/bin/python scripts/summarize_results.py \
   --config configs/experiment.yaml \
   --results outputs/raw \
-  --energy-backend accelergy \
+  --energy-backend accelergy_plugin \
   --tile-width 128 \
   --tile-height 128 \
-  --out outputs/summary_accelergy \
-  --figures figures_accelergy
+  --out outputs/summary_accelergy_plugin \
+  --figures figures_accelergy_plugin
 ```
 
 Run tests:
@@ -280,7 +284,7 @@ Run tests:
 
 ## Generated Outputs
 
-The final outputs are in `outputs/summary_accelergy/`.
+The final outputs are in `outputs/summary_accelergy_plugin/`.
 
 | File | Description |
 | --- | --- |
@@ -291,22 +295,23 @@ The final outputs are in `outputs/summary_accelergy/`.
 | `pareto_frontier.csv` | Non-dominated feasible designs. |
 | `bottleneck_summary.csv` | Gaussian vs. Sobel latency and energy shares. |
 | `accelergy_action_counts.csv` | Component action counts passed into Accelergy. |
-| `accelergy_ERT.yaml` | Table-based Accelergy Energy Reference Table. |
-| `accelergy_backend.yaml` | Metadata describing the Accelergy backend and ERT values. |
+| `accelergy_plugin/*/outputs/ERT.yaml` | Generated Accelergy Energy Reference Tables. |
+| `accelergy_backend.yaml` | Metadata describing the Accelergy binary, component library, generated ERTs, and pJ/action values. |
 | `skipped_runs.csv` | Simulator cases excluded by the resource guard. |
+| `rerun_skipped_log.csv` | Log from the main skipped-only retry batch, including completed and RSS-limited cases. |
 
 The final dataset contains:
 
 | Output | Rows |
 | --- | ---: |
-| Stage-level rows | 3,570 |
-| Complete pipeline configurations | 1,071 |
-| Feasibility rows | 3,213 |
-| Pareto-frontier rows | 273 |
+| Stage-level rows | 5,068 |
+| Complete pipeline configurations | 1,521 |
+| Feasibility rows | 4,563 |
+| Pareto-frontier rows | 150 |
 | Minimum-energy design rows | 36 |
-| Bottleneck-summary rows | 2,142 |
-| Accelergy action-count rows | 24,990 |
-| Skipped simulator cases | 9 |
+| Bottleneck-summary rows | 3,042 |
+| Accelergy action-count rows | 35,476 |
+| Skipped simulator cases | 116 |
 
 ## Results
 
@@ -314,64 +319,64 @@ For the main **1080p @ 33 ms** scenario, the minimum-energy feasible designs are
 
 | Gaussian Kernel | Best Design | SRAM | Bandwidth | Latency | Energy | EDP |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| 3x3 | 32x32 output-stationary | 1024 KB | 50 GB/s | 10.07 ms | 7.26 mJ | 73.15 mJ-ms |
-| 5x5 | 32x32 output-stationary | 4096 KB | 50 GB/s | 11.77 ms | 12.76 mJ | 150.22 mJ-ms |
-| 7x7 | 32x32 output-stationary | 4096 KB | 50 GB/s | 14.32 ms | 21.01 mJ | 300.91 mJ-ms |
-| 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 47.00 mJ | 357.99 mJ-ms |
+| 3x3 | 128x128 input-stationary | 1024 KB | 50 GB/s | 13.30 ms | 0.45 mJ | 5.92 mJ-ms |
+| 5x5 | 128x128 input-stationary | 4096 KB | 50 GB/s | 13.96 ms | 0.78 mJ | 10.88 mJ-ms |
+| 7x7 | 64x64 weight-stationary | 256 KB | 50 GB/s | 4.64 ms | 1.28 mJ | 5.93 mJ-ms |
+| 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 2.77 mJ | 21.12 mJ-ms |
 
-The 3x3, 5x5, and 7x7 cases all meet the 33 ms deadline with a 32x32 array. The 11x11 Gaussian case is much heavier, so the minimum-energy feasible design shifts to a 128x128 weight-stationary array.
+Under the generated Accelergy table-plug-in ERTs, input-stationary wins the smaller 3x3 and 5x5 1080p cases, while weight-stationary still wins the 7x7 and 11x11 cases. The selected array size and SRAM budget are therefore workload- and dataflow-dependent, not a fixed preference for one dataflow.
 
-The same pattern appears across the other 33 ms scenarios:
+The 33 ms winners by resolution are:
 
 | Resolution | Kernel | Best Design | Latency | Energy |
 | --- | ---: | --- | ---: | ---: |
-| 720p | 3x3 | 32x32 OS, 1024 KB, 50 GB/s | 4.48 ms | 3.23 mJ |
-| 720p | 5x5 | 32x32 OS, 4096 KB, 50 GB/s | 5.23 ms | 5.67 mJ |
-| 720p | 7x7 | 32x32 OS, 4096 KB, 50 GB/s | 6.37 ms | 9.34 mJ |
-| 720p | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 3.39 ms | 20.92 mJ |
-| 2048x2048 | 3x3 | 32x32 OS, 1024 KB, 50 GB/s | 20.37 ms | 14.69 mJ |
-| 2048x2048 | 5x5 | 32x32 OS, 4096 KB, 50 GB/s | 23.81 ms | 25.81 mJ |
-| 2048x2048 | 7x7 | 32x32 OS, 4096 KB, 50 GB/s | 28.97 ms | 42.49 mJ |
-| 2048x2048 | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 15.37 ms | 94.80 mJ |
+| 720p | 3x3 | 128x128 IS, 1024 KB, 50 GB/s | 5.91 ms | 0.20 mJ |
+| 720p | 5x5 | 32x32 WS, 256 KB, 50 GB/s | 2.05 ms | 0.35 mJ |
+| 720p | 7x7 | 64x64 WS, 256 KB, 50 GB/s | 2.06 ms | 0.57 mJ |
+| 720p | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 3.39 ms | 1.23 mJ |
+| 2048x2048 | 3x3 | 128x128 IS, 1024 KB, 50 GB/s | 26.89 ms | 0.90 mJ |
+| 2048x2048 | 5x5 | 32x32 WS, 256 KB, 50 GB/s | 9.29 ms | 1.57 mJ |
+| 2048x2048 | 7x7 | 64x64 WS, 256 KB, 50 GB/s | 9.34 ms | 2.59 mJ |
+| 2048x2048 | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 15.37 ms | 5.61 mJ |
 
 ### Latency Scaling
 
-![Latency by array size](figures_accelergy/latency_by_array.png)
+![Latency by array size](figures_accelergy_plugin/latency_by_array.png)
 
 Latency improves as array size increases, especially for heavier kernels. The improvement is not uniform. Smaller kernels can stop benefiting from larger arrays because their lowered GEMM shapes do not keep every processing element busy.
 
 ### Energy Scaling
 
-![Energy by array size](figures_accelergy/energy_by_array.png)
+![Energy by array size](figures_accelergy_plugin/energy_by_array.png)
 
-Energy is affected by both work and hardware utilization. A larger array can reduce latency, but extra compute capacity does not automatically reduce energy. In this Accelergy ERT version, SRAM access energy is fixed per byte across all SRAM capacities, so SRAM capacity affects energy through the SCALE-Sim access counts rather than through different SRAM circuit costs.
+Energy is affected by both work and hardware utilization. A larger array can reduce latency, but extra compute capacity does not automatically reduce energy. In this Accelergy plug-in run, the generated SRAM action energies are the same across the tested SRAM capacities, so SRAM capacity affects energy through the SCALE-Sim access counts rather than through different SRAM circuit costs.
 
 ### Utilization And Stalls
 
-![Utilization by array size](figures_accelergy/utilization_by_array.png)
+![Utilization by array size](figures_accelergy_plugin/utilization_by_array.png)
 
-![Stall percentage by array size](figures_accelergy/stall_pct_by_array.png)
+![Stall percentage by array size](figures_accelergy_plugin/stall_pct_by_array.png)
 
 The utilization and stall plots explain why the largest array is not always the best design. A 128x128 array has more processing elements, but skinny GEMM shapes can leave many of them underused. This is why moderate arrays can be more energy-efficient for smaller kernels.
 
 ### Stage Energy Share
 
-![Stage energy share](figures_accelergy/stage_energy_share.png)
+![Stage energy share](figures_accelergy_plugin/stage_energy_share.png)
 
 For the 1080p @ 33 ms minimum-energy designs, the stage energy shares are:
 
 | Gaussian Kernel | Gaussian Energy Share | Sobel Energy Share |
 | --- | ---: | ---: |
-| 3x3 | 47.59% | 52.41% |
-| 5x5 | 70.17% | 29.83% |
-| 7x7 | 81.88% | 18.12% |
-| 11x11 | 90.45% | 9.55% |
+| 3x3 | 45.91% | 54.09% |
+| 5x5 | 69.09% | 30.91% |
+| 7x7 | 81.01% | 18.99% |
+| 11x11 | 91.24% | 8.76% |
 
 The Gaussian stage becomes dominant as kernel size grows. For the 11x11 case, most of the energy is spent in Gaussian blur, so optimizing Sobel would have limited impact on total frame energy.
 
 ### Pareto Frontier
 
-![Pareto frontier](figures_accelergy/pareto_frontier.png)
+![Pareto frontier](figures_accelergy_plugin/pareto_frontier.png)
 
 The Pareto frontier shows the latency-energy tradeoff among feasible configurations. A Pareto design is one where no other feasible design is both faster and lower energy. This matters because minimum latency and minimum energy are different objectives.
 
@@ -379,13 +384,15 @@ The Pareto frontier shows the latency-energy tradeoff among feasible configurati
 
 The main architectural result is that the best systolic array depends on the workload and deadline.
 
-For 3x3, 5x5, and 7x7 Gaussian kernels, a 32x32 output-stationary array is enough to meet the 33 ms deadline for the tested resolutions. Moving to a larger array can reduce latency, but the extra hardware does not always reduce energy.
+For the 3x3 and 5x5 Gaussian kernels, the minimum-energy 1080p @ 33 ms design shifts to input-stationary after adding the IS SCALE-Sim runs. Those designs are slower than the previous weight-stationary picks but still meet the 33 ms deadline and have slightly lower Accelergy-derived energy.
 
-For the 11x11 Gaussian kernel, the computation per output pixel rises to 121 Gaussian filter values before Sobel even runs. That larger workload gives the 128x128 weight-stationary array enough work to become the minimum-energy feasible design. The dataflow shift also makes sense because the larger Gaussian filter increases weight reuse.
+For the 7x7 Gaussian kernel, the minimum-energy design remains a 64x64 weight-stationary array. Moving to a larger array can reduce latency, but the extra hardware does not always reduce energy.
+
+For the 11x11 Gaussian kernel, the computation per output pixel rises to 121 Gaussian filter values before Sobel even runs. That larger workload gives the 128x128 weight-stationary array enough work to become the minimum-energy feasible design.
 
 The deadline framing changes the design decision. A real-time embedded service only needs to finish before the next frame period. Once a design satisfies the deadline, lower energy becomes more valuable than extra speed.
 
-The Accelergy path makes the energy calculation more structured than a single spreadsheet formula. SCALE-Sim produces per-stage action counts, the repo writes an explicit ERT, and Accelergy calculates per-component energy. The pJ/action values still come from the experiment configuration, so the results should be presented as comparative modeling results rather than measured hardware energy.
+The `accelergy_plugin` path keeps the energy calculation closer to the assignment: SCALE-Sim produces per-stage action counts, the repo writes Accelergy architecture/action-count inputs, Accelergy generates the ERT through its component library/table plug-ins, and the generated pJ/action values are applied to the design sweep. The results are still comparative modeling results, not measured hardware energy.
 
 ## Limitations
 
@@ -396,13 +403,12 @@ The main limitations are:
 - The workload models grayscale 8-bit images only.
 - The experiment evaluates accelerator performance and energy modeling, not image quality.
 - Full-frame behavior is estimated from tiled simulations and analytical scaling.
-- Accelergy uses a table-based ERT with configurable pJ/action assumptions.
+- The energy values come from Accelergy table-plug-in estimates for the modeled components, so they are best interpreted as relative design comparisons.
 - CACTI, Aladdin, and Timeloop are not used in the active final pipeline.
-- The energy values are best interpreted as relative design comparisons.
 - Leakage, wire energy, full memory-controller behavior, and host-system overhead are outside the model.
 - A small number of pathological SCALE-Sim cases were skipped by a resource guard and recorded in `skipped_runs.csv`.
 
-The skipped cases are output-stationary 11x11 Gaussian full-tile simulations on 128x128 arrays. They triggered excessive SCALE-Sim demand generation and were excluded from full pipeline summaries so partial tile results would not contaminate frame-level metrics.
+The skipped-only retry pass recovered 76 of the original 128 unique raw skipped simulations. The remaining skipped cases are recorded simulator resource guards, not energy-model shortcuts. They correspond to 52 unique raw SCALE-Sim runs, expanded to 116 logical summary rows: 18 output-stationary 11x11 Gaussian full-tile rows on 128x128 arrays and 98 input-stationary large-kernel 128-wide tile rows that still exceeded the 8 GB RSS retry guard. They were excluded from full pipeline summaries so partial tile results would not contaminate frame-level metrics.
 
 ## Takeaways
 
@@ -410,10 +416,10 @@ The final conclusions are:
 
 - Gaussian blur plus Sobel edge detection is a tangible real-time embedded image-processing workload.
 - Tiled SCALE-Sim simulation makes full-frame design exploration feasible.
-- Accelergy provides reproducible component-level energy accounting from action counts and an explicit ERT.
+- Accelergy provides reproducible component-level energy accounting from action counts and generated ERT files.
 - The best array is workload-dependent and deadline-dependent.
-- For 3x3, 5x5, and 7x7 Gaussian kernels, the minimum-energy feasible 1080p @ 33 ms design is a 32x32 output-stationary array.
-- For the 11x11 Gaussian kernel, the minimum-energy feasible 1080p @ 33 ms design shifts to a 128x128 weight-stationary array.
+- For 3x3 and 5x5 Gaussian kernels, the minimum-energy feasible 1080p @ 33 ms design uses input-stationary dataflow after adding IS to the sweep.
+- For 7x7 and 11x11 Gaussian kernels, the minimum-energy feasible 1080p @ 33 ms design remains weight-stationary.
 - Gaussian blur becomes the dominant energy contributor as kernel size increases.
 - Minimum latency and minimum energy lead to different design choices.
 

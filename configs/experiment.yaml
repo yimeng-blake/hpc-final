@@ -20,7 +20,7 @@ gaussian_kernels: [3, 5, 7, 11]
 array_sizes: [8, 16, 32, 64, 128]
 sram_budgets_kb: [256, 1024, 4096]
 bandwidths_gbps: [50, 200, 800]
-dataflows: ["ws", "os"]
+dataflows: ["ws", "os", "is"]
 
 tile_sizes:
   sanity:
@@ -36,16 +36,16 @@ sanity_sweep:
   array_sizes: [8, 16]
   sram_budgets_kb: [1024]
   bandwidths_gbps: [50, 200]
-  dataflows: ["ws"]
+  dataflows: ["ws", "is"]
 
 energy:
-  model: "assignment_style_accelergy_ert"
-  mac_pj: 0.23
-  mac_source: "Configurable assignment-style ERT assumption for 8-bit MAC actions."
-  sram_pj_per_byte: 5.0
-  sram_source: "Configurable assignment-style ERT assumption for on-chip SRAM byte accesses."
-  dram_pj_per_byte: 160.0
-  dram_source: "Configurable assignment-style ERT assumption for off-chip DRAM byte accesses."
+  model: "accelergy_component_library_table_plugin"
+  accelergy_plugin:
+    technology: "40nm"
+    memory_width_bits: 8
+    dram_width_bits: 8
+    mac_datawidth: 8
+    pe_memory_width: 16
 
 scalesim:
   read_request_buffer: 32
