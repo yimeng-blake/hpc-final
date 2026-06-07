@@ -11,9 +11,26 @@ The final experiment uses:
 - **SCALE-Sim** for systolic-array performance simulation.
 - **Accelergy** for action-count energy calculation through the component-library/table-plug-in path.
 - **Tiled full-frame scaling** to keep the experiment tractable.
+- **A focused refinement sweep** around the main 1080p real-time objective.
 - **Deadline-constrained design selection** to choose energy-efficient feasible hardware.
 
 This version follows the same general direction as the class SCALE-Sim + Accelergy assignments: simulate accelerator performance, convert the simulator results into action counts, let Accelergy provide an Energy Reference Table, and report latency, energy, and EDP. CACTI is not part of the active pipeline.
+
+## Submission Package Checklist
+
+The final submission should include code, data, and report artifacts:
+
+| Requirement | Project Artifact |
+| --- | --- |
+| README with setup and reproduction instructions | `README.md` |
+| Source and scripts used for results | `src/hpc_final/`, `scripts/`, `configs/experiment.yaml` |
+| Raw and summarized data used in the report | `outputs/raw/`, `outputs/summary_accelergy_plugin/` |
+| Figures used in the report | `figures_accelergy_plugin/` |
+| Final report source | `FINAL_REPORT.tex` |
+| Report draft/supporting formatted copy | `FINAL_REPORT.md`, `FINAL_REPORT.docx` |
+| Tests for framework behavior | `tests/` |
+
+The final report follows the required sections: Introduction, System Design and Implementation Details, Experimental Results and Evaluation, Conclusions, Team Contributions and Acknowledgement, and References.
 
 ## Problem Statement
 
@@ -201,12 +218,18 @@ The sweep covers both workload parameters and hardware parameters.
 
 | Hardware Parameter | Values |
 | --- | --- |
-| Array sizes | 8x8, 16x16, 32x32, 64x64, 128x128 |
-| SRAM budgets | 256 KB, 1024 KB, 4096 KB |
-| Bandwidths | 50 GB/s, 200 GB/s, 800 GB/s |
-| Dataflows | weight-stationary, output-stationary, input-stationary |
+| Coarse array sizes | 8x8, 16x16, 32x32, 64x64, 128x128 |
+| 1080p refinement array sizes | 32x32, 48x48, 64x64, 96x96, 128x128 |
+| Coarse SRAM budgets | 256 KB, 1024 KB, 4096 KB |
+| 1080p refinement SRAM budgets | 256 KB, 512 KB, 1024 KB, 2048 KB, 4096 KB |
+| Coarse bandwidths | 50 GB/s, 200 GB/s, 800 GB/s |
+| 1080p refinement bandwidths | 50 GB/s, 100 GB/s |
+| Coarse dataflows | weight-stationary, output-stationary, input-stationary |
+| 1080p refinement dataflows | weight-stationary, input-stationary |
 | Frequency | 1 GHz |
 | Word size | 1 byte |
+
+The initial full sweep remains broad and powers-of-two oriented. The focused refinement pass answers the coarse-step limitation by sampling intermediate array sizes, SRAM budgets, and bandwidth near the main 1080p @ 33 ms feasible/low-energy region. Output-stationary remains in the coarse sweep, but the refinement pass focuses on weight-stationary and input-stationary because output-stationary did not win any coarse Pareto or minimum-energy row and has known large-kernel SCALE-Sim resource pathologies.
 
 The summary also reports `cycles_x_pes`, which matches the class assignment style of comparing cycle count against the amount of hardware used.
 
@@ -263,6 +286,12 @@ Run the full SCALE-Sim sweep:
 .venv/bin/python scripts/run_sweep.py --mode full --workers 4
 ```
 
+Run the focused 1080p refinement sweep:
+
+```bash
+.venv/bin/python scripts/run_sweep.py --mode refinement --workers 4
+```
+
 Generate final Accelergy-backed summaries and figures:
 
 ```bash
@@ -282,6 +311,22 @@ Run tests:
 .venv/bin/pytest -q
 ```
 
+Build the LaTeX report PDF on a machine with a TeX distribution installed:
+
+```bash
+latexmk -pdf FINAL_REPORT.tex
+```
+
+If `latexmk` is unavailable, run `pdflatex FINAL_REPORT.tex` twice so references and figure numbers resolve.
+
+Build the optional DOCX copy with a Python environment that has `python-docx` installed:
+
+```bash
+python report/build_final_report_docx.py
+```
+
+That report builder only assembles existing result tables and figures. Experiment execution and chart generation stay in `scripts/run_sweep.py` and `scripts/summarize_results.py`.
+
 ## Generated Outputs
 
 The final outputs are in `outputs/summary_accelergy_plugin/`.
@@ -300,18 +345,20 @@ The final outputs are in `outputs/summary_accelergy_plugin/`.
 | `skipped_runs.csv` | Simulator cases excluded by the resource guard. |
 | `rerun_skipped_log.csv` | Log from the main skipped-only retry batch, including completed and RSS-limited cases. |
 
+The main plot outputs are in `figures_accelergy_plugin/`, including the appendix charts `energy_latency_scatter.png`, `stage_share_by_kernel.png`, and `component_energy_split.png`.
+
 The final dataset contains:
 
 | Output | Rows |
 | --- | ---: |
-| Stage-level rows | 5,068 |
-| Complete pipeline configurations | 1,521 |
-| Feasibility rows | 4,563 |
-| Pareto-frontier rows | 150 |
+| Stage-level rows | 6,052 |
+| Complete pipeline configurations | 1,767 |
+| Feasibility rows | 5,301 |
+| Pareto-frontier rows | 165 |
 | Minimum-energy design rows | 36 |
-| Bottleneck-summary rows | 3,042 |
-| Accelergy action-count rows | 35,476 |
-| Skipped simulator cases | 116 |
+| Bottleneck-summary rows | 3,534 |
+| Accelergy action-count rows | 42,364 |
+| Skipped simulator rows | 280 |
 
 ## Results
 
@@ -320,11 +367,11 @@ For the main **1080p @ 33 ms** scenario, the minimum-energy feasible designs are
 | Gaussian Kernel | Best Design | SRAM | Bandwidth | Latency | Energy | EDP |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | 3x3 | 128x128 input-stationary | 1024 KB | 50 GB/s | 13.30 ms | 0.45 mJ | 5.92 mJ-ms |
-| 5x5 | 128x128 input-stationary | 4096 KB | 50 GB/s | 13.96 ms | 0.78 mJ | 10.88 mJ-ms |
+| 5x5 | 128x128 input-stationary | 2048 KB | 50 GB/s | 13.96 ms | 0.78 mJ | 10.88 mJ-ms |
 | 7x7 | 64x64 weight-stationary | 256 KB | 50 GB/s | 4.64 ms | 1.28 mJ | 5.93 mJ-ms |
 | 11x11 | 128x128 weight-stationary | 256 KB | 50 GB/s | 7.62 ms | 2.77 mJ | 21.12 mJ-ms |
 
-Under the generated Accelergy table-plug-in ERTs, input-stationary wins the smaller 3x3 and 5x5 1080p cases, while weight-stationary still wins the 7x7 and 11x11 cases. The selected array size and SRAM budget are therefore workload- and dataflow-dependent, not a fixed preference for one dataflow.
+Under the generated Accelergy table-plug-in ERTs, input-stationary wins the smaller 3x3 and 5x5 1080p cases, while weight-stationary still wins the 7x7 and 11x11 cases. The focused refinement pass did not find a lower-energy 1080p design than the coarse pass, but it did improve the selected 5x5 SRAM point from 4096 KB to 2048 KB at the same modeled energy and latency. The selected array size, SRAM budget, and dataflow are therefore workload-dependent, not fixed preferences for one hardware setting.
 
 The 33 ms winners by resolution are:
 
@@ -334,6 +381,10 @@ The 33 ms winners by resolution are:
 | 720p | 5x5 | 32x32 WS, 256 KB, 50 GB/s | 2.05 ms | 0.35 mJ |
 | 720p | 7x7 | 64x64 WS, 256 KB, 50 GB/s | 2.06 ms | 0.57 mJ |
 | 720p | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 3.39 ms | 1.23 mJ |
+| 1080p | 3x3 | 128x128 IS, 1024 KB, 50 GB/s | 13.30 ms | 0.45 mJ |
+| 1080p | 5x5 | 128x128 IS, 2048 KB, 50 GB/s | 13.96 ms | 0.78 mJ |
+| 1080p | 7x7 | 64x64 WS, 256 KB, 50 GB/s | 4.64 ms | 1.28 mJ |
+| 1080p | 11x11 | 128x128 WS, 256 KB, 50 GB/s | 7.62 ms | 2.77 mJ |
 | 2048x2048 | 3x3 | 128x128 IS, 1024 KB, 50 GB/s | 26.89 ms | 0.90 mJ |
 | 2048x2048 | 5x5 | 32x32 WS, 256 KB, 50 GB/s | 9.29 ms | 1.57 mJ |
 | 2048x2048 | 7x7 | 64x64 WS, 256 KB, 50 GB/s | 9.34 ms | 2.59 mJ |
@@ -386,6 +437,8 @@ The main architectural result is that the best systolic array depends on the wor
 
 For the 3x3 and 5x5 Gaussian kernels, the minimum-energy 1080p @ 33 ms design shifts to input-stationary after adding the IS SCALE-Sim runs. Those designs are slower than the previous weight-stationary picks but still meet the 33 ms deadline and have slightly lower Accelergy-derived energy.
 
+The focused refinement pass then checks whether the coarse powers-of-two grid hid a better 1080p objective value. It adds 48x48 and 96x96 arrays, 512 KB and 2048 KB SRAM points, and a 100 GB/s bandwidth point. The 3x3, 7x7, and 11x11 winners remain unchanged. The 5x5 winner keeps the same 128x128 input-stationary latency and energy, but the selected SRAM budget drops from 4096 KB to 2048 KB because the finer SRAM grid exposes an equivalent-energy point with less local storage.
+
 For the 7x7 Gaussian kernel, the minimum-energy design remains a 64x64 weight-stationary array. Moving to a larger array can reduce latency, but the extra hardware does not always reduce energy.
 
 For the 11x11 Gaussian kernel, the computation per output pixel rises to 121 Gaussian filter values before Sobel even runs. That larger workload gives the 128x128 weight-stationary array enough work to become the minimum-energy feasible design.
@@ -406,9 +459,9 @@ The main limitations are:
 - The energy values come from Accelergy table-plug-in estimates for the modeled components, so they are best interpreted as relative design comparisons.
 - CACTI, Aladdin, and Timeloop are not used in the active final pipeline.
 - Leakage, wire energy, full memory-controller behavior, and host-system overhead are outside the model.
-- A small number of pathological SCALE-Sim cases were skipped by a resource guard and recorded in `skipped_runs.csv`.
+- Pathological SCALE-Sim cases were skipped by a resource guard and recorded in `skipped_runs.csv`.
 
-The skipped-only retry pass recovered 76 of the original 128 unique raw skipped simulations. The remaining skipped cases are recorded simulator resource guards, not energy-model shortcuts. They correspond to 52 unique raw SCALE-Sim runs, expanded to 116 logical summary rows: 18 output-stationary 11x11 Gaussian full-tile rows on 128x128 arrays and 98 input-stationary large-kernel 128-wide tile rows that still exceeded the 8 GB RSS retry guard. They were excluded from full pipeline summaries so partial tile results would not contaminate frame-level metrics.
+The skipped-only retry pass recovered 76 of the original 128 unique raw skipped simulations. After adding the focused refinement pass, `skipped_runs.csv` contains 280 logical skipped rows. These are recorded simulator resource guards, not energy-model shortcuts, and they are excluded from full pipeline summaries so partial tile results do not contaminate frame-level metrics.
 
 ## Takeaways
 
@@ -420,6 +473,7 @@ The final conclusions are:
 - The best array is workload-dependent and deadline-dependent.
 - For 3x3 and 5x5 Gaussian kernels, the minimum-energy feasible 1080p @ 33 ms design uses input-stationary dataflow after adding IS to the sweep.
 - For 7x7 and 11x11 Gaussian kernels, the minimum-energy feasible 1080p @ 33 ms design remains weight-stationary.
+- The focused 1080p refinement pass does not overturn the coarse energy minima, but it does reduce the selected 5x5 SRAM budget from 4096 KB to 2048 KB.
 - Gaussian blur becomes the dominant energy contributor as kernel size increases.
 - Minimum latency and minimum energy lead to different design choices.
 

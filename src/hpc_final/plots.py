@@ -17,6 +17,134 @@ def _save(fig: plt.Figure, path: Path) -> None:
     plt.close(fig)
 
 
+def _plot_stacked_percent_bars(
+    labels: list[str],
+    series: list[tuple[str, list[float], str]],
+    title: str,
+    path: Path,
+) -> None:
+    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    bottoms = [0.0] * len(labels)
+    for name, values, color in series:
+        bars = ax.bar(labels, values, bottom=bottoms, label=name, color=color, edgecolor="white", linewidth=0.8)
+        for bar, value, bottom in zip(bars, values, bottoms):
+            if value >= 8:
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bottom + value / 2,
+                    f"{value:.0f}%",
+                    ha="center",
+                    va="center",
+                    color="white" if color != "#C9C9C9" else "black",
+                    fontsize=8,
+                )
+        bottoms = [bottom + value for bottom, value in zip(bottoms, values)]
+
+    ax.set_ylim(0, 100)
+    ax.set_ylabel("Share of modeled dynamic energy (%)")
+    ax.set_xlabel("Gaussian kernel")
+    ax.set_title(title)
+    ax.grid(axis="y", alpha=0.25)
+    ax.legend(loc="upper right", fontsize=8, frameon=True)
+    _save(fig, path)
+
+
+def _selected_1080p_winners(summary_path: Path, deadline_ms: float = 33.0) -> pd.DataFrame:
+    winner_path = summary_path / "minimum_energy_designs.csv"
+    if not winner_path.exists():
+        return pd.DataFrame()
+    winners = pd.read_csv(winner_path)
+    if winners.empty:
+        return winners
+    winners = winners[(winners["resolution"] == "1080p") & (winners["deadline_ms"].round(6) == deadline_ms)].copy()
+    winners = winners.sort_values("gaussian_kernel")
+    if winners.empty:
+        return winners
+    winners["mac_pct"] = winners["energy_mac_pj"] / winners["energy_total_pj"] * 100
+    winners["sram_pct"] = winners["energy_sram_pj"] / winners["energy_total_pj"] * 100
+    winners["dram_pct"] = winners["energy_dram_pj"] / winners["energy_total_pj"] * 100
+    return winners
+
+
+def _generate_selected_design_charts(summary_path: Path, figures_path: Path) -> list[Path]:
+    generated: list[Path] = []
+    winners = _selected_1080p_winners(summary_path)
+    if winners.empty:
+        return generated
+
+    labels = [f"{int(value)}x{int(value)}" for value in winners["gaussian_kernel"]]
+    component_path = figures_path / "component_energy_split.png"
+    _plot_stacked_percent_bars(
+        labels,
+        [
+            ("MAC", [float(v) for v in winners["mac_pct"]], "#59A14F"),
+            ("SRAM dynamic", [float(v) for v in winners["sram_pct"]], "#4E79A7"),
+            ("DRAM dynamic", [float(v) for v in winners["dram_pct"]], "#F28E2B"),
+        ],
+        "Dynamic component energy split",
+        component_path,
+    )
+    generated.append(component_path)
+
+    bottleneck_path = summary_path / "bottleneck_summary.csv"
+    if not bottleneck_path.exists():
+        return generated
+    bottleneck = pd.read_csv(bottleneck_path)
+    if bottleneck.empty:
+        return generated
+
+    selected = bottleneck.merge(
+        winners[
+            [
+                "resolution",
+                "tile_width",
+                "tile_height",
+                "gaussian_kernel",
+                "array_size",
+                "sram_budget_kb",
+                "bandwidth_gbps",
+                "dataflow",
+            ]
+        ],
+        on=[
+            "resolution",
+            "tile_width",
+            "tile_height",
+            "gaussian_kernel",
+            "array_size",
+            "sram_budget_kb",
+            "bandwidth_gbps",
+            "dataflow",
+        ],
+        how="inner",
+    )
+    if selected.empty:
+        return generated
+
+    stage = (
+        selected.pivot_table(
+            index="gaussian_kernel",
+            columns="stage_op",
+            values="energy_share_pct",
+            aggfunc="first",
+        )
+        .reindex(winners["gaussian_kernel"])
+        .fillna(0)
+    )
+    stage_path = figures_path / "stage_share_by_kernel.png"
+    _plot_stacked_percent_bars(
+        labels,
+        [
+            ("Gaussian", [float(v) for v in stage.get("gaussian", pd.Series([0] * len(stage))).tolist()], "#4E79A7"),
+            ("Sobel", [float(v) for v in stage.get("sobel", pd.Series([0] * len(stage))).tolist()], "#F28E2B"),
+        ],
+        "Stage energy share by Gaussian kernel",
+        stage_path,
+    )
+    generated.append(stage_path)
+    return generated
+
+
 def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Path]:
     summary_path = Path(summary_dir)
     figures_path = Path(figures_dir)
@@ -300,4 +428,5 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
             _save(fig, path)
             generated.append(path)
 
+    generated.extend(_generate_selected_design_charts(summary_path, figures_path))
     return generated

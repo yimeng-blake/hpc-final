@@ -40,9 +40,9 @@ def load_experiment_config(path: str | Path) -> dict[str, Any]:
 
 
 def selected_sweep_values(config: dict[str, Any], mode: str) -> dict[str, Any]:
-    """Return the sweep values for sanity or full mode."""
-    if mode not in {"sanity", "full"}:
-        raise ValueError("mode must be 'sanity' or 'full'")
+    """Return the sweep values for sanity, full, or refinement mode."""
+    if mode not in {"sanity", "full", "refinement"}:
+        raise ValueError("mode must be 'sanity', 'full', or 'refinement'")
 
     if mode == "full":
         return {
@@ -53,6 +53,23 @@ def selected_sweep_values(config: dict[str, Any], mode: str) -> dict[str, Any]:
             "bandwidths_gbps": config["bandwidths_gbps"],
             "dataflows": config["dataflows"],
             "tile_size": config["tile_sizes"]["full"],
+        }
+
+    if mode == "refinement":
+        refinement = config.get("refinement_sweep")
+        if refinement is None:
+            raise ValueError("mode='refinement' requires a refinement_sweep config section")
+        return {
+            "resolutions": refinement.get("resolutions", list(config["resolutions"].keys())),
+            "gaussian_kernels": refinement.get("gaussian_kernels", config["gaussian_kernels"]),
+            "array_sizes": refinement.get("array_sizes", config["array_sizes"]),
+            "sram_budgets_kb": refinement.get("sram_budgets_kb", config["sram_budgets_kb"]),
+            "bandwidths_gbps": refinement.get("bandwidths_gbps", config["bandwidths_gbps"]),
+            "dataflows": refinement.get("dataflows", config["dataflows"]),
+            "tile_size": refinement.get(
+                "tile_size",
+                config["tile_sizes"].get("refinement", config["tile_sizes"]["full"]),
+            ),
         }
 
     sanity = config.get("sanity_sweep", {})

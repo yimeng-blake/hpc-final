@@ -59,10 +59,32 @@ generated_erts:
   dram_ifmap_read_pj_per_action: 1.0
   dram_filter_read_pj_per_action: 1.0
   dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_256_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_256_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_256_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_256_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
 - architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_1024_word_1/inputs/architecture.yaml
   action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_1024_word_1/inputs/action_count.yaml
   ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_1024_word_1/outputs/ERT.yaml
   output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_1024_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_4096_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_4096_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_4096_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_4096_word_1/outputs
   mac_pj: 1.0
   sram_ifmap_read_pj_per_action: 8.0
   sram_filter_read_pj_per_action: 8.0
@@ -136,10 +158,87 @@ generated_erts:
   dram_ifmap_read_pj_per_action: 1.0
   dram_filter_read_pj_per_action: 1.0
   dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_512_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_512_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_512_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_512_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_2048_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_2048_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_2048_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_2048_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_512_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_512_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_512_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_512_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
 - architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_256_word_1/inputs/architecture.yaml
   action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_256_word_1/inputs/action_count.yaml
   ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_256_word_1/outputs/ERT.yaml
   output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_16_sram_256_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_512_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_512_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_512_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_512_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_512_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_512_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_512_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_512_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_512_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_512_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_512_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_512_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_2048_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_2048_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_2048_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_2048_word_1/outputs
   mac_pj: 1.0
   sram_ifmap_read_pj_per_action: 8.0
   sram_filter_read_pj_per_action: 8.0
@@ -162,6 +261,83 @@ generated_erts:
   action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_256_word_1/inputs/action_count.yaml
   ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_256_word_1/outputs/ERT.yaml
   output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_64_sram_256_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_2048_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_2048_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_2048_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_2048_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_2048_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_2048_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_2048_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_128_sram_2048_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_4096_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_4096_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_4096_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_4096_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_256_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_256_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_256_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_256_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_1024_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_1024_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_1024_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_48_sram_1024_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_1024_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_1024_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_1024_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_96_sram_1024_word_1/outputs
+  mac_pj: 1.0
+  sram_ifmap_read_pj_per_action: 8.0
+  sram_filter_read_pj_per_action: 8.0
+  sram_ofmap_write_pj_per_action: 7.0
+  dram_ifmap_read_pj_per_action: 1.0
+  dram_filter_read_pj_per_action: 1.0
+  dram_ofmap_write_pj_per_action: 1.0
+- architecture: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_2048_word_1/inputs/architecture.yaml
+  action_count: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_2048_word_1/inputs/action_count.yaml
+  ert: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_2048_word_1/outputs/ERT.yaml
+  output_dir: outputs/summary_accelergy_plugin/accelergy_plugin/array_32_sram_2048_word_1/outputs
   mac_pj: 1.0
   sram_ifmap_read_pj_per_action: 8.0
   sram_filter_read_pj_per_action: 8.0

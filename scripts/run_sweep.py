@@ -14,7 +14,12 @@ from hpc_final.runner import filter_specs_by_lower_bound, iter_run_specs, run_ma
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run tiled SCALE-Sim experiment sweep.")
     parser.add_argument("--config", default=str(ROOT / "configs" / "experiment.yaml"))
-    parser.add_argument("--mode", choices=["sanity", "full"], default="sanity")
+    parser.add_argument(
+        "--mode",
+        choices=["sanity", "full", "refinement"],
+        default="sanity",
+        help="Sweep mode. Use refinement after the broad full pass to add finer candidate points.",
+    )
     parser.add_argument("--raw-dir", default=str(ROOT / "outputs" / "raw"))
     parser.add_argument("--force", action="store_true", help="Re-run cached simulations.")
     parser.add_argument("--dry-run", action="store_true", help="Only print the number of runs.")

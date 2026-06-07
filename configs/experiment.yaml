@@ -22,6 +22,15 @@ sram_budgets_kb: [256, 1024, 4096]
 bandwidths_gbps: [50, 200, 800]
 dataflows: ["ws", "os", "is"]
 
+refinement_sweep:
+  resolutions: ["1080p"]
+  gaussian_kernels: [3, 5, 7, 11]
+  # Focus the fine pass around the main real-time objective's feasible/low-energy region.
+  array_sizes: [32, 48, 64, 96, 128]
+  sram_budgets_kb: [256, 512, 1024, 2048, 4096]
+  bandwidths_gbps: [50, 100]
+  dataflows: ["ws", "is"]
+
 tile_sizes:
   sanity:
     width: 64
