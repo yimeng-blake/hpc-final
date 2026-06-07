@@ -14,8 +14,6 @@ Submit these directories/files with the project package:
 
 ```text
 README.md                         Setup and reproduction instructions.
-FINAL_REPORT.tex                  Final report source.
-FINAL_REPORT.docx                 Optional formatted report copy.
 configs/experiment.yaml           Experiment configuration.
 scripts/                          Experiment, summarization, and smoke-test scripts.
 src/hpc_final/                    Reusable modeling and analysis code.
@@ -107,7 +105,7 @@ accelergy_plugin/*/outputs/ERT.yaml
 accelergy_plugin/*/outputs/energy_estimation.yaml
 ```
 
-Final figures are stored in `figures_accelergy_plugin/`. The report appendix uses:
+Final figures are stored in `figures_accelergy_plugin/`, including:
 
 ```text
 energy_latency_scatter.png
@@ -120,9 +118,3 @@ component_energy_split.png
 The modeled application includes only the accelerator compute stages, Gaussian blur and Sobel edge detection. Camera capture, display, CPU orchestration, static/leakage power, and full-system idle power are outside the model.
 
 Some SCALE-Sim cases are skipped by resource guards and recorded in `outputs/summary_accelergy_plugin/skipped_runs.csv`. Skipped partial results are excluded from full-pipeline summaries.
-
-The report source is `FINAL_REPORT.tex`. Compile it with a local TeX installation if a PDF is required:
-
-```bash
-latexmk -pdf FINAL_REPORT.tex
-```
