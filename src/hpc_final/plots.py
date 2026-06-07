@@ -10,11 +10,22 @@ from matplotlib.lines import Line2D
 import pandas as pd
 
 
-def _save(fig: plt.Figure, path: Path) -> None:
+def _save(fig: plt.Figure, path: Path, *, tight_rect: tuple[float, float, float, float] | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    fig.savefig(path, dpi=180)
+    fig.tight_layout(rect=tight_rect)
+    fig.savefig(path, dpi=180, bbox_inches="tight")
     plt.close(fig)
+
+
+def _legend_outside(ax: plt.Axes, *, fontsize: int = 7, ncol: int = 1) -> None:
+    ax.legend(
+        fontsize=fontsize,
+        loc="upper left",
+        bbox_to_anchor=(1.01, 1.0),
+        borderaxespad=0,
+        frameon=True,
+        ncol=ncol,
+    )
 
 
 def _plot_stacked_percent_bars(
@@ -23,7 +34,7 @@ def _plot_stacked_percent_bars(
     title: str,
     path: Path,
 ) -> None:
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    fig, ax = plt.subplots(figsize=(7.6, 4.2))
     bottoms = [0.0] * len(labels)
     for name, values, color in series:
         bars = ax.bar(labels, values, bottom=bottoms, label=name, color=color, edgecolor="white", linewidth=0.8)
@@ -45,7 +56,7 @@ def _plot_stacked_percent_bars(
     ax.set_xlabel("Gaussian kernel")
     ax.set_title(title)
     ax.grid(axis="y", alpha=0.25)
-    ax.legend(loc="upper right", fontsize=8, frameon=True)
+    _legend_outside(ax, fontsize=8)
     _save(fig, path)
 
 
@@ -162,7 +173,7 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
     if pipeline.empty:
         return generated
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8.6, 5))
     for (resolution, kernel), group in pipeline.groupby(["resolution", "gaussian_kernel"]):
         subset = group.groupby("array_size", as_index=False)["latency_ms"].min()
         ax.plot(subset["array_size"], subset["latency_ms"], marker="o", label=f"{resolution} k={kernel}")
@@ -170,12 +181,12 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
     ax.set_ylabel("Best latency per frame (ms)")
     ax.set_title("Latency vs array size")
     ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=7)
+    _legend_outside(ax, fontsize=7)
     path = figures_path / "latency_by_array.png"
     _save(fig, path)
     generated.append(path)
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8.6, 5))
     for (resolution, kernel), group in pipeline.groupby(["resolution", "gaussian_kernel"]):
         subset = group.groupby("array_size", as_index=False)["energy_total_mj"].min()
         ax.plot(subset["array_size"], subset["energy_total_mj"], marker="o", label=f"{resolution} k={kernel}")
@@ -183,7 +194,7 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
     ax.set_ylabel("Best energy per frame (mJ)")
     ax.set_title("Energy vs array size")
     ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=7)
+    _legend_outside(ax, fontsize=7)
     path = figures_path / "energy_by_array.png"
     _save(fig, path)
     generated.append(path)
@@ -317,13 +328,13 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
                 markersize=10,
             )
         )
-    axes[0].legend(handles=legend_handles, fontsize=7, loc="upper right", frameon=True)
     fig.suptitle("Energy-delay design space")
     path = figures_path / "energy_latency_scatter.png"
-    _save(fig, path)
+    fig.legend(handles=legend_handles, fontsize=7, loc="lower center", bbox_to_anchor=(0.5, -0.02), ncol=5, frameon=True)
+    _save(fig, path, tight_rect=(0, 0.1, 1, 0.94))
     generated.append(path)
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8.6, 5))
     for (resolution, kernel), group in pipeline.groupby(["resolution", "gaussian_kernel"]):
         best = group.sort_values("latency_ms").groupby("array_size", as_index=False).first()
         ax.plot(best["array_size"], best["stall_pct"], marker="o", label=f"{resolution} k={kernel}")
@@ -331,7 +342,7 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
     ax.set_ylabel("Stall cycles (%)")
     ax.set_title("Stall rate of fastest design at each array size")
     ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=7)
+    _legend_outside(ax, fontsize=7)
     path = figures_path / "stall_pct_by_array.png"
     _save(fig, path)
     generated.append(path)
@@ -362,14 +373,14 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
                 .agg(util_cycles=("util_cycles", "sum"), scaled_cycles=("scaled_cycles", "sum"))
             )
             util["weighted_util_pct"] = util["util_cycles"] / util["scaled_cycles"].where(util["scaled_cycles"] != 0, 1)
-            fig, ax = plt.subplots(figsize=(8, 5))
+            fig, ax = plt.subplots(figsize=(8.6, 5))
             for (resolution, kernel), group in util.groupby(["resolution", "gaussian_kernel"]):
                 ax.plot(group["array_size"], group["weighted_util_pct"], marker="o", label=f"{resolution} k={kernel}")
             ax.set_xlabel("Array size")
             ax.set_ylabel("Cycle-weighted utilization (%)")
             ax.set_title("Utilization vs array size")
             ax.grid(True, alpha=0.3)
-            ax.legend(fontsize=7)
+            _legend_outside(ax, fontsize=7)
             path = figures_path / "utilization_by_array.png"
             _save(fig, path)
             generated.append(path)
@@ -402,7 +413,7 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
                     "energy_total_mj",
                 ]
             )
-            fig, ax = plt.subplots(figsize=(7, 5))
+            fig, ax = plt.subplots(figsize=(8.6, 5))
             ax.scatter(pipeline["latency_ms"], pipeline["energy_total_mj"], color="0.82", s=14, label="All designs")
             for (resolution, kernel), group in pareto.groupby(["resolution", "gaussian_kernel"]):
                 group = group.sort_values("latency_ms")
@@ -411,7 +422,7 @@ def generate_plots(summary_dir: str | Path, figures_dir: str | Path) -> list[Pat
             ax.set_ylabel("Energy per frame (mJ)")
             ax.set_title("Pareto frontier")
             ax.grid(True, alpha=0.3)
-            ax.legend(fontsize=7)
+            _legend_outside(ax, fontsize=7)
             path = figures_path / "pareto_frontier.png"
             _save(fig, path)
             generated.append(path)
